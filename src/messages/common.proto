@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package openocean;
+
+import "messages/options.proto";
+
+enum SpeedMode
+{
+    SPEED_MODE_OVER_WATER = 0;
+    SPEED_MODE_OVER_GROUND = 1;
+    SPEED_MODE_ESTIMATE = 2;
+}
+
+message Speed
+{
+    optional double value = 1 [(openocean.field).units = "m/s"];
+    optional SpeedMode mode = 2;
+}
+
+message Euler
+{
+    optional double roll = 1 [(openocean.field).units = "rad"];
+    optional double pitch = 2 [(openocean.field).units = "rad"];
+    // clockwise from true north
+    optional double heading = 3 [(openocean.field).units = "rad"];
+}

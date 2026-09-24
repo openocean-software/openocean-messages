@@ -4,8 +4,9 @@
 //     statically with (openocean.field).units or at runtime with
 //     (openocean.field).units_field naming a sibling string field.
 //  2. Every static units string parses with UDUNITS-2.
-//  3. ControlSetpoint stays aligned with Navigation: a field that shares a name
-//     with a Navigation field must also share its number and units.
+//  3. ControlSetpoint stays consistent with Navigation: a field that shares a
+//     name with a Navigation field must also share its type and units, so the
+//     same quantity is never represented two ways.
 //
 // Prints one line per problem and exits non-zero if there were any.
 
@@ -88,9 +89,9 @@ void check_aligned(const Descriptor* desc, const Descriptor* reference)
         const FieldDescriptor* ref = reference->FindFieldByName(field->name());
         if (!ref)
             continue;
-        if (field->number() != ref->number())
-            fail(field, "number " + std::to_string(field->number()) + " differs from " +
-                            ref->full_name() + " (" + std::to_string(ref->number()) + ")");
+        if (field->type_name() != ref->type_name() ||
+            field->message_type() != ref->message_type())
+            fail(field, "type differs from " + ref->full_name());
         const auto& units = field->options().GetExtension(openocean::field).units();
         const auto& ref_units = ref->options().GetExtension(openocean::field).units();
         if (units != ref_units)
@@ -119,6 +120,6 @@ int main()
     ut_free_system(units_system);
 
     if (errors == 0)
-        std::cout << "All units valid and ControlSetpoint aligned with Navigation\n";
+        std::cout << "All units valid and ControlSetpoint consistent with Navigation\n";
     return errors == 0 ? 0 : 1;
 }

@@ -2,29 +2,10 @@ syntax = "proto3";
 
 package openocean;
 
+import "messages/common.proto";
 import "messages/options.proto";
 
-message Speed
-{
-    optional double value = 30 [(openocean.field).units = "m/s"];
-
-    enum SpeedMode
-    {
-        OVER_WATER = 1;
-        OVER_GROUND = 2;
-    }
-    optional SpeedMode mode = 31 [default = OVER_WATER];
-}
-
-message Euler
-{
-    optional double roll = 20 [(openocean.field).units = "rad"];
-    optional double pitch = 21 [(openocean.field).units = "rad"];
-    // clockwise from true north
-    optional double heading = 22 [(openocean.field).units = "rad"];
-}
-
-// Quantities, frames, and field numbers match Navigation.
+// Quantities and frames match Navigation.
 message ControlSetpoint
 {
     uint64 time = 1 [(openocean.field).units =
@@ -34,7 +15,7 @@ message ControlSetpoint
     // above the seafloor
     optional double altitude = 13 [(openocean.field).units = "m"];
 
-    optional Euler angle = 14;
+    optional Euler attitude = 14;
     optional Speed speed = 30;
 
     message CustomSetpoint

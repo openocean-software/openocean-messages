@@ -2,16 +2,14 @@ syntax = "proto3";
 
 package openocean;
 
+import "messages/common.proto";
 import "messages/options.proto";
-import "messages/control.proto";
 
 // Frames:
 //  - geodetic: WGS-84 latitude, longitude, and depth (positive down)
-//  - local: ENU x (east), y (north), z (up) relative to the datum, so z =
-//  -depth
+//  - local: ENU e (east), n (north), u (up) relative to the datum,
+//    so u = -depth
 //  - body: x forward, y starboard, z down (Fossen / SNAME)
-//
-// Field numbers are grouped by quantity and shared with ControlSetpoint.
 message Navigation
 {
     uint64 time = 1 [(openocean.field).units =
@@ -38,58 +36,48 @@ message Navigation
         optional double u = 4 [(openocean.field).units = "m"];
     }
 
-    oneof position
-    {
-        Geodetic global = 10;
-        ENU local = 11;
-    }
-    optional Euler angle = 12;
+    optional Geodetic global = 10;
+    optional ENU local = 11;
+    optional Euler attitude = 12;
 
     message Velocity
     {
         optional double u = 1 [(openocean.field).units = "m/s"];
         optional double v = 2 [(openocean.field).units = "m/s"];
         optional double w = 3 [(openocean.field).units = "m/s"];
+        optional SpeedMode mode = 4;
     }
 
     oneof linear_speed
     {
         Speed speed = 13;
-        Velocities velocity = 14;
+        Velocity velocity = 14;
     }
-    enum SpeedMode
-    {
-        SPEED_MODE_UNKNOWN = 0;
-        SPEED_MODE_REF_GROUND = 1;
-        SPEED_MODE_REF_WATER = 2;
-        SPEED_MODE_ESTIMATE = 3;
-    }
-    SpeedMode speed_mode = 15;
 
     optional double altitude = 16 [(openocean.field).units = "m"];
     optional double course_over_ground = 17 [(openocean.field).units = "rad"];
 
-    message EulerRates
+    message AngularVelocity
     {
         optional double p = 1 [(openocean.field).units = "rad/s"];
         optional double q = 2 [(openocean.field).units = "rad/s"];
         optional double r = 3 [(openocean.field).units = "rad/s"];
     }
-    optional EulerRates angle_rate = 18;
+    optional AngularVelocity angular_velocity = 18;
 
-    message Accelerations
+    message Acceleration
     {
         optional double du_dt = 1 [(openocean.field).units = "m/s^2"];
         optional double dv_dt = 2 [(openocean.field).units = "m/s^2"];
         optional double dw_dt = 3 [(openocean.field).units = "m/s^2"];
     }
-    optional Accelerations accel = 19;
+    optional Acceleration acceleration = 19;
 
-    message EulerAccel
+    message AngularAcceleration
     {
         optional double dp_dt = 1 [(openocean.field).units = "rad/s^2"];
         optional double dq_dt = 2 [(openocean.field).units = "rad/s^2"];
         optional double dr_dt = 3 [(openocean.field).units = "rad/s^2"];
     }
-    optional EulerAccel angle_accel = 20;
+    optional AngularAcceleration angular_acceleration = 20;
 }

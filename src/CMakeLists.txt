@@ -4,6 +4,7 @@ protobuf_generate(
   LANGUAGE cpp
   PROTOS
     messages/options.proto
+    messages/common.proto
     messages/navigation.proto
     messages/control.proto
   IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
