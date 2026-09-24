@@ -5,11 +5,12 @@ Messages are defined in Protobuf. Every numeric field declares its units as a [U
 
 ## Repo Structure
 
-- proto/openocean: Message definitions
-  - options.proto: Field options (units)
-  - navigation.proto: Navigation (vehicle state)
-  - control.proto: ControlSetpoint (heading, speed, depth, etc.)
-- test: Checks that all units parse with UDUNITS-2 and that ControlSetpoint stays aligned with Navigation
+- src: Source code
+  - messages: Message definitions (Protobuf, imported as `messages/*.proto`)
+    - options.proto: Field options (units)
+    - navigation.proto: Navigation (vehicle state)
+    - control.proto: ControlSetpoint (heading, speed, depth, etc.)
+  - test: Checks that all units parse with UDUNITS-2 and that ControlSetpoint stays aligned with Navigation
 
 ## Conventions
 
@@ -21,10 +22,12 @@ Messages are defined in Protobuf. Every numeric field declares its units as a [U
 
 ## Building
 
-Requires CMake >= 3.13, Protobuf, and UDUNITS-2 (`apt install libprotobuf-dev protobuf-compiler libudunits2-dev`).
+Install the dependencies (Ubuntu), then build with CMake and Ninja:
 
 ```
-cmake -S . -B build
-cmake --build build
+./init.sh
+./build.sh
 ctest --test-dir build
 ```
+
+`build.sh` passes any arguments on to CMake, and `BUILD_DIR` overrides the build directory (default `build`).

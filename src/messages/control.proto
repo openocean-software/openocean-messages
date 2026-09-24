@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package openocean;
 
-import "openocean/options.proto";
+import "messages/options.proto";
 
 // Quantities, frames, and field numbers match Navigation. An unset setpoint
 // is not controlled.

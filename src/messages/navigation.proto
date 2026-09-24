@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package openocean;
 
-import "openocean/options.proto";
+import "messages/options.proto";
 
 // Frames:
 //  - geodetic: WGS-84 latitude, longitude, and depth (positive down)
