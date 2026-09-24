@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package openocean;
+
+import "openocean/options.proto";
+
+// Quantities, frames, and field numbers match Navigation. An unset setpoint
+// is not controlled.
+message ControlSetpoint
+{
+    uint64 time = 1 [(openocean.field).units =
+                         "microseconds since 1970-01-01 00:00:00 UTC"];
+
+    optional double depth = 12 [(openocean.field).units = "m"];
+    // above the seafloor
+    optional double altitude = 13 [(openocean.field).units = "m"];
+
+    optional double roll = 20 [(openocean.field).units = "rad"];
+    optional double pitch = 21 [(openocean.field).units = "rad"];
+    // clockwise from true north
+    optional double heading = 22 [(openocean.field).units = "rad"];
+
+    optional double speed_over_water = 30 [(openocean.field).units = "m/s"];
+
+    message CustomSetpoint
+    {
+        string domain = 1;
+        double value = 2 [(openocean.field).units_field = "units"];
+        string units = 3;
+    }
+    repeated CustomSetpoint custom = 100;
+}
