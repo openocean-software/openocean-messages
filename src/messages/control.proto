@@ -11,12 +11,12 @@ message ControlSetpoint
     uint64 time = 1 [(openocean.field).units =
                          "microseconds since 1970-01-01 00:00:00 UTC"];
 
+    optional Euler attitude = 10;
+    optional Speed speed = 11;
     optional double depth = 12 [(openocean.field).units = "m"];
     // above the seafloor
     optional double altitude = 13 [(openocean.field).units = "m"];
 
-    optional Euler attitude = 14;
-    optional Speed speed = 30;
 
     message CustomSetpoint
     {

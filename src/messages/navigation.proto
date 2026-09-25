@@ -14,10 +14,13 @@ message Navigation
 {
     uint64 time = 1 [(openocean.field).units =
                          "microseconds since 1970-01-01 00:00:00 UTC"];
-    optional uint64 io_time = 2
-        [(openocean.field).units =
-             "microseconds since 1970-01-01 00:00:00 UTC"];
-    string vehicle_name = 3;
+
+    message VehicleMetadata
+    {
+        string name = 1;
+    }
+
+    VehicleMetadata vehicle = 2;
 
     message Geodetic
     {
@@ -30,10 +33,13 @@ message Navigation
 
     message ENU
     {
-        optional Geodetic datum = 1;
-        optional double e = 2 [(openocean.field).units = "m"];
-        optional double n = 3 [(openocean.field).units = "m"];
-        optional double u = 4 [(openocean.field).units = "m"];
+        optional double datum_latitude = 1
+            [(openocean.field).units = "degrees_north"];
+        optional double datum_longitude = 2
+            [(openocean.field).units = "degrees_east"];
+        optional double e = 3 [(openocean.field).units = "m"];
+        optional double n = 4 [(openocean.field).units = "m"];
+        optional double u = 5 [(openocean.field).units = "m"];
     }
 
     optional Geodetic global = 10;
@@ -48,14 +54,11 @@ message Navigation
         optional SpeedMode mode = 4;
     }
 
-    oneof linear_speed
-    {
-        Speed speed = 13;
-        Velocity velocity = 14;
-    }
+    repeated Speed speed = 13;
+    repeated Velocity velocity = 14;
 
-    optional double altitude = 16 [(openocean.field).units = "m"];
-    optional double course_over_ground = 17 [(openocean.field).units = "rad"];
+    optional double altitude = 15 [(openocean.field).units = "m"];
+    optional double course_over_ground = 16 [(openocean.field).units = "rad"];
 
     message AngularVelocity
     {
@@ -63,7 +66,7 @@ message Navigation
         optional double q = 2 [(openocean.field).units = "rad/s"];
         optional double r = 3 [(openocean.field).units = "rad/s"];
     }
-    optional AngularVelocity angular_velocity = 18;
+    optional AngularVelocity angular_velocity = 17;
 
     message Acceleration
     {
@@ -71,7 +74,7 @@ message Navigation
         optional double dv_dt = 2 [(openocean.field).units = "m/s^2"];
         optional double dw_dt = 3 [(openocean.field).units = "m/s^2"];
     }
-    optional Acceleration acceleration = 19;
+    optional Acceleration acceleration = 18;
 
     message AngularAcceleration
     {
@@ -79,5 +82,5 @@ message Navigation
         optional double dq_dt = 2 [(openocean.field).units = "rad/s^2"];
         optional double dr_dt = 3 [(openocean.field).units = "rad/s^2"];
     }
-    optional AngularAcceleration angular_acceleration = 20;
+    optional AngularAcceleration angular_acceleration = 19;
 }
