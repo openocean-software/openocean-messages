@@ -1,0 +1,9 @@
+version: v2
+modules:
+  - path: src
+    excludes:
+      - src/test
+breaking:
+  # FILE also catches renames and moves, which are wire-compatible but break every generated API
+  use:
+    - FILE
