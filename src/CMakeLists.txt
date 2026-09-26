@@ -35,6 +35,29 @@ if(OPENOCEAN_PYTHON)
   add_custom_target(openocean_messages_python ALL DEPENDS ${python_sources})
 endif()
 
+if(OPENOCEAN_NANOPB)
+  set(nanopb_dir ${PROJECT_BINARY_DIR}/nanopb)
+  set(nanopb_options ${CMAKE_CURRENT_SOURCE_DIR}/openocean/messages/nanopb.options)
+  set(nanopb_sources)
+  foreach(proto IN LISTS OPENOCEAN_PROTOS)
+    string(REGEX REPLACE "\\.proto$" ".pb" stem ${proto})
+    list(APPEND nanopb_sources ${nanopb_dir}/${stem}.c ${nanopb_dir}/${stem}.h)
+  endforeach()
+  add_custom_command(
+    OUTPUT ${nanopb_sources}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${nanopb_dir}
+    COMMAND protobuf::protoc --plugin=protoc-gen-nanopb=${NANOPB_PROTOC_PLUGIN}
+            "--nanopb_opt=-q -f ${nanopb_options}" --nanopb_out=${nanopb_dir}
+            -I ${CMAKE_CURRENT_SOURCE_DIR} ${OPENOCEAN_PROTOS}
+    DEPENDS ${OPENOCEAN_PROTOS} ${nanopb_options}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Generating nanopb C sources"
+    VERBATIM)
+  add_library(openocean_messages_nanopb ${nanopb_sources})
+  target_include_directories(openocean_messages_nanopb PUBLIC $<BUILD_INTERFACE:${nanopb_dir}>)
+  target_link_libraries(openocean_messages_nanopb PUBLIC nanopb::protobuf-nanopb-static)
+endif()
+
 if(OPENOCEAN_ROS)
   include(${CMAKE_CURRENT_SOURCE_DIR}/generators/ProtobufGenerateRos.cmake)
   set(OPENOCEAN_ROS_DIR ${PROJECT_BINARY_DIR}/ros)

@@ -12,6 +12,22 @@ if(OPENOCEAN_PYTHON)
   set_tests_properties(python_messages PROPERTIES ENVIRONMENT PYTHONPATH=${OPENOCEAN_PYTHON_DIR})
 endif()
 
+if(OPENOCEAN_NANOPB)
+  add_executable(check_nanopb nanopb/check_messages.c)
+  target_link_libraries(check_nanopb PRIVATE openocean_messages_nanopb)
+  set(nanopb_navigation ${CMAKE_CURRENT_BINARY_DIR}/nanopb_navigation.bin)
+  add_test(NAME nanopb_messages COMMAND check_nanopb ${nanopb_navigation})
+  if(OPENOCEAN_PYTHON)
+    set_tests_properties(nanopb_messages PROPERTIES FIXTURES_SETUP nanopb_navigation)
+    add_test(NAME nanopb_python_decode
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/nanopb/decode_navigation.py
+              ${nanopb_navigation})
+    set_tests_properties(nanopb_python_decode PROPERTIES
+      ENVIRONMENT PYTHONPATH=${OPENOCEAN_PYTHON_DIR}
+      FIXTURES_REQUIRED nanopb_navigation)
+  endif()
+endif()
+
 if(OPENOCEAN_ROS)
   set(ros_test_dir ${CMAKE_CURRENT_BINARY_DIR}/ros)
   protobuf_generate_ros(

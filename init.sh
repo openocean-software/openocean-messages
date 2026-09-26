@@ -2,11 +2,12 @@
 # Installs the Ubuntu dependencies for the selected outputs, and writes init.cmake so
 # that new build directories enable the same outputs by default.
 #
-# Usage: init.sh [--cxx] [--python] [--ros]   (default: --cxx)
+# Usage: init.sh [--cxx] [--python] [--ros] [--nanopb]   (default: --cxx)
 #   --cxx     C++ Protobuf library (and its UDUNITS-2 units test)
 #   --python  Python Protobuf modules
 #   --ros     ROS 2 message package, built with colcon. Needs the ROS 2 apt repository:
 #             https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html
+#   --nanopb  nanopb C library
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -14,18 +15,20 @@ cd "$(dirname "$0")"
 cxx=OFF
 python=OFF
 ros=OFF
+nanopb=OFF
 [ $# -eq 0 ] && cxx=ON
 for arg in "$@"; do
     case "${arg}" in
         --cxx) cxx=ON ;;
         --python) python=ON ;;
         --ros) ros=ON ;;
+        --nanopb) nanopb=ON ;;
         -h | --help)
-            sed -n '5,10s/^# \{0,1\}//p' "$0"
+            sed -n '5,11s/^# \{0,1\}//p' "$0"
             exit 0
             ;;
         *)
-            sed -n '5,10s/^# \{0,1\}//p' "$0" >&2
+            sed -n '5,11s/^# \{0,1\}//p' "$0" >&2
             exit 1
             ;;
     esac
@@ -49,6 +52,9 @@ if [ "${ros}" = ON ]; then
         python3-colcon-common-extensions
     )
 fi
+if [ "${nanopb}" = ON ]; then
+    packages+=(gcc nanopb libnanopb-dev)
+fi
 
 SUDO=""
 if [ "$(id -u)" -ne 0 ]; then
@@ -62,5 +68,6 @@ cat > init.cmake <<EOF
 set(OPENOCEAN_CPP_DEFAULT ${cxx})
 set(OPENOCEAN_PYTHON_DEFAULT ${python})
 set(OPENOCEAN_ROS_DEFAULT ${ros})
+set(OPENOCEAN_NANOPB_DEFAULT ${nanopb})
 EOF
-echo "Wrote init.cmake: OPENOCEAN_CPP=${cxx} OPENOCEAN_PYTHON=${python} OPENOCEAN_ROS=${ros}"
+echo "Wrote init.cmake: OPENOCEAN_CPP=${cxx} OPENOCEAN_PYTHON=${python} OPENOCEAN_ROS=${ros} OPENOCEAN_NANOPB=${nanopb}"

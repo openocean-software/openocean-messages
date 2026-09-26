@@ -11,6 +11,7 @@ Messages are defined in Protobuf. Every numeric field declares its units as a [U
     - common.proto: Types shared between messages (Speed, Euler)
     - navigation.proto: Navigation (vehicle state)
     - control.proto: ControlSetpoint (heading, speed, depth, etc.)
+    - nanopb.options: nanopb size limits
   - generators: protoc plugins that generate other formats
     - protoc-gen-ros: ROS 2 interface package
   - test: Checks that all units parse with UDUNITS-2 and that fields ControlSetpoint shares with Navigation have the same type and units, and tests for each output
@@ -28,7 +29,7 @@ Messages are defined in Protobuf. Every numeric field declares its units as a [U
 Install the dependencies (Ubuntu) for the outputs you want, then build with CMake and Ninja:
 
 ```
-./init.sh --cxx --python --ros
+./init.sh --cxx --python --ros --nanopb
 ./build.sh
 ctest --test-dir build
 ```
@@ -42,6 +43,7 @@ ctest --test-dir build
 | `--cxx` | `OPENOCEAN_CPP` | ON | `openocean_messages` library (`#include "openocean/messages/navigation.pb.h"`) |
 | `--python` | `OPENOCEAN_PYTHON` | OFF | `build/python` (`from openocean.messages import navigation_pb2`) |
 | `--ros` | `OPENOCEAN_ROS` | OFF | `build/ros/openocean_msgs` ROS 2 package source, to build with colcon |
+| `--nanopb` | `OPENOCEAN_NANOPB` | OFF | `openocean_messages_nanopb` C library (`#include "openocean/messages/navigation.pb.h"`, from `build/nanopb`) |
 
 `init.sh` with no options is `--cxx`. It writes `init.cmake`, which sets the option defaults for new build directories to the outputs it installed; `-D` still overrides them.
 
@@ -52,6 +54,10 @@ For example, with ROS 2 sourced:
 ./build.sh
 colcon build --base-paths build/ros
 ```
+
+### nanopb
+
+`src/openocean/messages/nanopb.options` limits each repeated and string field (e.g. at most 2 `Navigation.speed` entries, 32-character strings), so every field is a fixed-size struct member rather than a callback. Messages that exceed a limit fail to encode or decode with nanopb.
 
 ### Protobuf to ROS 2
 
