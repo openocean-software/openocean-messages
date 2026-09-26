@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package openocean;
 
-import "messages/common.proto";
-import "messages/options.proto";
+import "openocean/messages/common.proto";
+import "openocean/messages/options.proto";
 
 // Frames:
 //  - geodetic: WGS-84 latitude, longitude, and depth (positive down)
-//  - local: ENU e (east), n (north), u (up) relative to the datum,
+//  - enu: ENU e (east), n (north), u (up) relative to the datum,
 //    so u = -depth
 //  - body: x forward, y starboard, z down (Fossen / SNAME)
 message Navigation
@@ -30,7 +30,7 @@ message Navigation
             [(openocean.field).units = "degrees_east"];
         optional double depth = 3 [(openocean.field).units = "m"];
     }
-    optional Geodetic global = 10;
+    optional Geodetic geodetic = 10;
 
     message ENU
     {
@@ -42,7 +42,7 @@ message Navigation
         optional double n = 4 [(openocean.field).units = "m"];
         optional double u = 5 [(openocean.field).units = "m"];
     }
-    optional ENU local = 11;
+    optional ENU enu = 11;
 
     // defined in common.proto
     optional Euler attitude = 12;

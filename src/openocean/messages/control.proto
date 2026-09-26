@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package openocean;
 
-import "messages/common.proto";
-import "messages/options.proto";
+import "openocean/messages/common.proto";
+import "openocean/messages/options.proto";
 
 // Quantities and frames match Navigation.
 message ControlSetpoint

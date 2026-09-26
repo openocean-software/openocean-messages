@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package openocean;
 
-import "messages/options.proto";
+import "openocean/messages/options.proto";
 
 enum SpeedMode
 {

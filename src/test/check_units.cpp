@@ -16,9 +16,9 @@
 
 #include <udunits2.h>
 
-#include "messages/control.pb.h"
-#include "messages/navigation.pb.h"
-#include "messages/options.pb.h"
+#include "openocean/messages/control.pb.h"
+#include "openocean/messages/navigation.pb.h"
+#include "openocean/messages/options.pb.h"
 
 using google::protobuf::Descriptor;
 using google::protobuf::FieldDescriptor;
