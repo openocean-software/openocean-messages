@@ -1,0 +1,6 @@
+# nanopb size limits, so that every field is a fixed-size struct member rather than a callback
+openocean.Navigation.speed                  max_count:2
+openocean.Navigation.velocity               max_count:2
+openocean.Navigation.VehicleMetadata.name   max_size:32
+openocean.ControlSetpoint.custom            max_count:8
+openocean.ControlSetpoint.CustomSetpoint.*  max_size:32

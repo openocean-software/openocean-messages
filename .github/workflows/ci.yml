@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  all:
+    name: All outputs (Ubuntu ${{ matrix.ubuntu }})
+    runs-on: ubuntu-latest
+    container: ubuntu:${{ matrix.ubuntu }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ["24.04", "26.04"]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Add the ROS 2 apt repository
+        run: .github/ci/add-ros-apt-source.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Install dependencies
+        run: ./init.sh --cxx --python --ros --nanopb --rust
+      - name: Build
+        run: |
+          source /opt/ros/*/setup.bash
+          ./build.sh
+      - name: Test
+        run: |
+          source /opt/ros/*/setup.bash
+          ctest --test-dir build --output-on-failure --no-tests=error
+
+  alone:
+    name: ${{ matrix.output }} alone (Ubuntu 26.04)
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        output: [cxx, python, ros, nanopb, rust]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Add the ROS 2 apt repository
+        if: matrix.output == 'ros'
+        run: .github/ci/add-ros-apt-source.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Install dependencies
+        run: ./init.sh --${{ matrix.output }}
+      - name: Build
+        run: |
+          if [ -d /opt/ros ]; then source /opt/ros/*/setup.bash; fi
+          # init.cmake selects the output; only the C++ output may need a C++ compiler
+          args=()
+          if [ "${{ matrix.output }}" != cxx ]; then args+=(-DCMAKE_CXX_COMPILER=/nonexistent/g++); fi
+          ./build.sh "${args[@]}"
+      - name: Test
+        run: |
+          if [ -d /opt/ros ]; then source /opt/ros/*/setup.bash; fi
+          ctest --test-dir build --output-on-failure --no-tests=error
