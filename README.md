@@ -15,6 +15,7 @@ Messages are defined in Protobuf. Every numeric field declares its units as a [U
   - generators: protoc plugins that generate other formats
     - protoc-gen-ros: ROS 2 interface package
   - test: Checks that all units parse with UDUNITS-2 and that fields ControlSetpoint shares with Navigation have the same type and units, and tests for each output
+- rust: Rust crate (`build.rs` generates the types with prost)
 
 ## Conventions
 
@@ -29,7 +30,7 @@ Messages are defined in Protobuf. Every numeric field declares its units as a [U
 Install the dependencies (Ubuntu) for the outputs you want, then build with CMake and Ninja:
 
 ```
-./init.sh --cxx --python --ros --nanopb
+./init.sh --cxx --python --ros --nanopb --rust
 ./build.sh
 ctest --test-dir build
 ```
@@ -44,6 +45,7 @@ ctest --test-dir build
 | `--python` | `OPENOCEAN_PYTHON` | OFF | `build/python` (`from openocean.messages import navigation_pb2`) |
 | `--ros` | `OPENOCEAN_ROS` | OFF | `build/ros/openocean_msgs` ROS 2 package source, to build with colcon |
 | `--nanopb` | `OPENOCEAN_NANOPB` | OFF | `openocean_messages_nanopb` C library (`#include "openocean/messages/navigation.pb.h"`, from `build/nanopb`) |
+| `--rust` | `OPENOCEAN_RUST` | OFF | `openocean-messages` crate in `rust/` (prost), built into `build/rust` |
 
 `init.sh` with no options is `--cxx`. It writes `init.cmake`, which sets the option defaults for new build directories to the outputs it installed; `-D` still overrides them.
 
@@ -58,6 +60,10 @@ colcon build --base-paths build/ros
 ### nanopb
 
 `src/openocean/messages/nanopb.options` limits each repeated and string field (e.g. at most 2 `Navigation.speed` entries, 32-character strings), so every field is a fixed-size struct member rather than a callback. Messages that exceed a limit fail to encode or decode with nanopb.
+
+### Rust
+
+`rust/` is a Cargo crate whose `build.rs` generates the types with [prost](https://github.com/tokio-rs/prost) from `src/openocean/messages`. It can also be built with cargo directly (`cargo build` in `rust/`, with `protoc` on the `PATH`), or used from another crate as a path dependency. `rust-version` is 1.75 (Ubuntu 24.04's cargo), and `Cargo.lock` pins dependencies that build with it.
 
 ### Protobuf to ROS 2
 

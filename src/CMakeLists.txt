@@ -58,6 +58,13 @@ if(OPENOCEAN_NANOPB)
   target_link_libraries(openocean_messages_nanopb PUBLIC nanopb::protobuf-nanopb-static)
 endif()
 
+if(OPENOCEAN_RUST)
+  add_custom_target(openocean_messages_rust ALL
+    COMMAND ${OPENOCEAN_CARGO} build --manifest-path ${OPENOCEAN_CARGO_MANIFEST}
+    USES_TERMINAL
+    VERBATIM)
+endif()
+
 if(OPENOCEAN_ROS)
   include(${CMAKE_CURRENT_SOURCE_DIR}/generators/ProtobufGenerateRos.cmake)
   set(OPENOCEAN_ROS_DIR ${PROJECT_BINARY_DIR}/ros)

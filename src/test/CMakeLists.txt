@@ -28,6 +28,11 @@ if(OPENOCEAN_NANOPB)
   endif()
 endif()
 
+if(OPENOCEAN_RUST)
+  add_test(NAME rust_messages
+    COMMAND ${OPENOCEAN_CARGO} test --manifest-path ${OPENOCEAN_CARGO_MANIFEST})
+endif()
+
 if(OPENOCEAN_ROS)
   set(ros_test_dir ${CMAKE_CURRENT_BINARY_DIR}/ros)
   protobuf_generate_ros(

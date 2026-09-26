@@ -1,0 +1,15 @@
+[package]
+name = "openocean-messages"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Rust types for the openocean messages, generated with prost"
+license = "Apache-2.0"
+authors = ["Toby Schneider <toby@oceansoft.org>"]
+publish = false
+
+[dependencies]
+prost = "0.14.1"
+
+[build-dependencies]
+prost-build = "0.14.1"
