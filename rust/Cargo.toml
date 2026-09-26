@@ -1,6 +1,6 @@
 [package]
 name = "openocean-messages"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
 rust-version = "1.75"
 description = "Rust types for the openocean messages, generated with prost"

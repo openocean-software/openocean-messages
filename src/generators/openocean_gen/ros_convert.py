@@ -234,7 +234,7 @@ class _Converter:
     def cmake_lists(self):
         protos = "".join(f"    {f}\n" for f in self.proto_files)
         return f"""cmake_minimum_required(VERSION 3.10)
-project({self.name} CXX)
+project({self.name} VERSION {self.params.get("version", "0.0.0")} LANGUAGES CXX)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -246,6 +246,8 @@ find_package(Protobuf REQUIRED)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 add_library(${{PROJECT_NAME}})
+set_target_properties(${{PROJECT_NAME}} PROPERTIES
+  VERSION ${{PROJECT_VERSION}} SOVERSION {self.params.get("soversion", "0")})
 protobuf_generate(
   TARGET ${{PROJECT_NAME}}
   LANGUAGE cpp

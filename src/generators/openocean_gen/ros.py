@@ -195,7 +195,7 @@ class _Package:
         deps = (f"  DEPENDENCIES {' '.join(sorted(self.dependencies))}\n"
                 if self.dependencies else "")
         return f"""cmake_minimum_required(VERSION 3.10)
-project({self.name})
+project({self.name} VERSION {self.params.get("version", "0.0.0")})
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)

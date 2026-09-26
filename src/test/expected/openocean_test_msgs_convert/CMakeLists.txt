@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(openocean_test_msgs_convert CXX)
+project(openocean_test_msgs_convert VERSION 0.1.0 LANGUAGES CXX)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -11,6 +11,8 @@ find_package(Protobuf REQUIRED)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 add_library(${PROJECT_NAME})
+set_target_properties(${PROJECT_NAME} PROPERTIES
+  VERSION ${PROJECT_VERSION} SOVERSION 1)
 protobuf_generate(
   TARGET ${PROJECT_NAME}
   LANGUAGE cpp

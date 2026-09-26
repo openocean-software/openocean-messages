@@ -1,3 +1,7 @@
+add_test(NAME version_consistent
+  COMMAND ${CMAKE_COMMAND} -DPROJECT_VERSION=${PROJECT_VERSION}
+          -DCARGO_TOML=${PROJECT_SOURCE_DIR}/rust/Cargo.toml -P ${CMAKE_CURRENT_SOURCE_DIR}/check_version.cmake)
+
 if(OPENOCEAN_CPP)
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(UDUNITS REQUIRED IMPORTED_TARGET udunits)

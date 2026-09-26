@@ -6,6 +6,8 @@ set(OPENOCEAN_PROTOS
 
 if(OPENOCEAN_CPP)
   add_library(openocean_messages)
+  set_target_properties(openocean_messages PROPERTIES
+    VERSION ${PROJECT_VERSION} SOVERSION ${OPENOCEAN_SOVERSION})
   protobuf_generate(
     TARGET openocean_messages
     LANGUAGE cpp
@@ -54,6 +56,8 @@ if(OPENOCEAN_NANOPB)
     COMMENT "Generating nanopb C sources"
     VERBATIM)
   add_library(openocean_messages_nanopb ${nanopb_sources})
+  set_target_properties(openocean_messages_nanopb PROPERTIES
+    VERSION ${PROJECT_VERSION} SOVERSION ${OPENOCEAN_SOVERSION})
   target_include_directories(openocean_messages_nanopb PUBLIC $<BUILD_INTERFACE:${nanopb_dir}>)
   target_link_libraries(openocean_messages_nanopb PUBLIC nanopb::protobuf-nanopb-static)
 endif()
@@ -88,6 +92,8 @@ if(OPENOCEAN_ROS)
   set(OPENOCEAN_ROS_PACKAGE openocean_msgs)
   set(OPENOCEAN_ROS_CONVERT_PACKAGE openocean_msgs_convert)
   set(OPENOCEAN_ROS_OPTIONS
+    version=${PROJECT_VERSION}
+    soversion=${OPENOCEAN_SOVERSION}
     "maintainer=Toby Schneider"
     maintainer_email=toby@oceansoft.org
     license=Apache-2.0)
