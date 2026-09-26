@@ -12,8 +12,8 @@ import "openocean/messages/options.proto";
 //  - body: x forward, y starboard, z down (Fossen / SNAME)
 message Navigation
 {
-    uint64 time = 1 [(openocean.field).units =
-                         "microseconds since 1970-01-01 00:00:00 UTC"];
+    int64 time = 1 [(openocean.field).units =
+                        "microseconds since 1970-01-01 00:00:00 UTC"];
 
     message VehicleMetadata
     {

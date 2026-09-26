@@ -19,7 +19,7 @@ int main()
     };
 
     openocean_msgs::msg::Navigation nav;
-    // uint64 microseconds since 1970 becomes builtin_interfaces/Time
+    // int64 microseconds since 1970 becomes builtin_interfaces/Time
     nav.time.sec = 1;
     nav.time.nanosec = 500;
     // optional presence becomes has_<field>

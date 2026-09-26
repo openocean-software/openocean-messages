@@ -8,8 +8,8 @@ import "openocean/messages/options.proto";
 // Quantities and frames match Navigation.
 message ControlSetpoint
 {
-    uint64 time = 1 [(openocean.field).units =
-                         "microseconds since 1970-01-01 00:00:00 UTC"];
+    int64 time = 1 [(openocean.field).units =
+                        "microseconds since 1970-01-01 00:00:00 UTC"];
 
     optional Euler attitude = 10;
     optional Speed speed = 11;
