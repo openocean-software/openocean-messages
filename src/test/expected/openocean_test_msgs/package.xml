@@ -4,8 +4,8 @@
   <name>openocean_test_msgs</name>
   <version>0.0.0</version>
   <description>Messages generated from Protobuf by protoc-gen-ros</description>
-  <maintainer email="maintainer@example.com">openocean-software</maintainer>
-  <license>TODO</license>
+  <maintainer email="toby@oceansoft.org">Toby Schneider</maintainer>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>

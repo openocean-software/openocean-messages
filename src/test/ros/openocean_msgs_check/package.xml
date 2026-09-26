@@ -4,8 +4,8 @@
   <name>openocean_msgs_check</name>
   <version>0.0.0</version>
   <description>Uses the generated ROS 2 messages from C++</description>
-  <maintainer email="maintainer@example.com">openocean-software</maintainer>
-  <license>TODO</license>
+  <maintainer email="toby@oceansoft.org">Toby Schneider</maintainer>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

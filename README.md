@@ -67,3 +67,7 @@ colcon build --base-paths build/ros
 | units | trailing `# [units]` comment |
 
 Field names that are Python or C++ keywords are rejected. `src/test/expected` holds the package the generator should produce from `src/test/ros/mapping.proto`; after an intended change to the generator, run `ninja -C build update_expected` and review the diff.
+
+## License
+
+Apache-2.0; see [LICENSE](LICENSE).

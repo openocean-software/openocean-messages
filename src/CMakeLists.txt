@@ -32,9 +32,9 @@ if(OPENOCEAN_ROS)
   set(OPENOCEAN_ROS_DIR ${PROJECT_BINARY_DIR}/ros)
   set(OPENOCEAN_ROS_PACKAGE openocean_msgs)
   set(OPENOCEAN_ROS_OPTIONS
-    maintainer=openocean-software
-    maintainer_email=maintainer@example.com
-    license=TODO)
+    "maintainer=Toby Schneider"
+    maintainer_email=toby@oceansoft.org
+    license=Apache-2.0)
   protobuf_generate_ros(
     TARGET openocean_messages_ros
     PACKAGE ${OPENOCEAN_ROS_PACKAGE}
