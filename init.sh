@@ -38,9 +38,10 @@ for arg in "$@"; do
     esac
 done
 
-packages=(cmake ninja-build protobuf-compiler)
+# libprotobuf-dev also has the well-known .proto files, e.g. descriptor.proto
+packages=(cmake ninja-build protobuf-compiler libprotobuf-dev)
 if [ "${cxx}" = ON ]; then
-    packages+=(g++ libprotobuf-dev pkg-config libudunits2-dev)
+    packages+=(g++ pkg-config libudunits2-dev)
 fi
 if [ "${python}" = ON ] || [ "${ros}" = ON ]; then
     packages+=(python3 python3-protobuf)
@@ -67,7 +68,8 @@ if [ "${ros}" = ON ]; then
     )
 fi
 if [ "${nanopb}" = ON ]; then
-    packages+=(gcc nanopb libnanopb-dev)
+    # gcc only recommends libc6-dev, which linking needs
+    packages+=(gcc libc6-dev nanopb libnanopb-dev)
 fi
 if [ "${rust}" = ON ]; then
     # cargo fetches crates over HTTPS
