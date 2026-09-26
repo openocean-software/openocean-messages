@@ -41,13 +41,25 @@ if(OPENOCEAN_ROS)
     OUTPUT_DIR ${ros_test_dir}
     PROTOS mapping.proto
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src
-    OPTIONS ${OPENOCEAN_ROS_OPTIONS})
+    OPTIONS ${OPENOCEAN_ROS_OPTIONS}
+    CONVERT_PACKAGE openocean_test_msgs_convert
+    CONVERT_PROTOS mapping.proto ${PROJECT_SOURCE_DIR}/src/openocean/messages/options.proto)
 
   set(expected ${CMAKE_CURRENT_SOURCE_DIR}/expected/openocean_test_msgs)
-  add_test(NAME ros_expected COMMAND diff -r ${expected} ${ros_test_dir}/openocean_test_msgs)
+  set(expected_convert ${CMAKE_CURRENT_SOURCE_DIR}/expected/openocean_test_msgs_convert)
+  set(convert ${ros_test_dir}/openocean_test_msgs_convert)
+  # Only what protoc-gen-ros writes: the converter package's protos are copies of the sources
+  add_test(NAME ros_expected COMMAND sh -c
+    "diff -r ${expected} ${ros_test_dir}/openocean_test_msgs && \
+     diff -r ${expected_convert}/include ${convert}/include && \
+     diff ${expected_convert}/package.xml ${convert}/package.xml && \
+     diff ${expected_convert}/CMakeLists.txt ${convert}/CMakeLists.txt")
   list(APPEND update_expected
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${expected}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${ros_test_dir}/openocean_test_msgs ${expected})
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${ros_test_dir}/openocean_test_msgs ${expected}
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${expected_convert}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${convert}/include ${expected_convert}/include
+    COMMAND ${CMAKE_COMMAND} -E copy ${convert}/package.xml ${convert}/CMakeLists.txt ${expected_convert})
   list(APPEND update_expected_depends openocean_test_msgs_ros)
 
   find_program(COLCON colcon)
@@ -55,7 +67,7 @@ if(OPENOCEAN_ROS)
     add_test(NAME ros_build
       COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/ros/build_and_check.sh
               ${CMAKE_CURRENT_BINARY_DIR}/ros_ws ${Python3_EXECUTABLE}
-              ${OPENOCEAN_ROS_DIR}/${OPENOCEAN_ROS_PACKAGE} ${ros_test_dir}/openocean_test_msgs)
+              ${OPENOCEAN_ROS_DIR} ${ros_test_dir})
   else()
     message(STATUS "colcon or a sourced ROS 2 environment not found: skipping the ros_build test")
   endif()

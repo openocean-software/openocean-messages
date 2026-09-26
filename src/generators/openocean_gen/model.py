@@ -112,6 +112,8 @@ class Model:
     enums: List[Enum]
     # Every type in the request (including imports), by fully qualified name
     all_types: dict
+    # The request's proto files and their imports, except Protobuf's own
+    proto_files: List[str]
 
 
 def _comments(locations, path):
@@ -254,7 +256,9 @@ def build(request):
                 f"{t.full_name} and {seen[t.flat_name]} both flatten to {t.flat_name}")
         seen[t.flat_name] = t.full_name
 
-    return Model(messages, enums, all_types)
+    proto_files = [f.name for f in request.proto_file
+                   if not f.name.startswith("google/protobuf/")]
+    return Model(messages, enums, all_types, proto_files)
 
 
 def enum_value_names(e, valid):

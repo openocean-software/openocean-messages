@@ -86,6 +86,7 @@ if(OPENOCEAN_ROS)
   include(${CMAKE_CURRENT_SOURCE_DIR}/generators/ProtobufGenerateRos.cmake)
   set(OPENOCEAN_ROS_DIR ${PROJECT_BINARY_DIR}/ros)
   set(OPENOCEAN_ROS_PACKAGE openocean_msgs)
+  set(OPENOCEAN_ROS_CONVERT_PACKAGE openocean_msgs_convert)
   set(OPENOCEAN_ROS_OPTIONS
     "maintainer=Toby Schneider"
     maintainer_email=toby@oceansoft.org
@@ -96,7 +97,8 @@ if(OPENOCEAN_ROS)
     OUTPUT_DIR ${OPENOCEAN_ROS_DIR}
     PROTOS ${OPENOCEAN_PROTOS}
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-    OPTIONS ${OPENOCEAN_ROS_OPTIONS})
+    OPTIONS ${OPENOCEAN_ROS_OPTIONS}
+    CONVERT_PACKAGE ${OPENOCEAN_ROS_CONVERT_PACKAGE})
 endif()
 
 if(BUILD_TESTING)

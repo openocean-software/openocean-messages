@@ -209,7 +209,8 @@ ament_package()
 
 
 def generate(model, params):
-    """Returns {path: content} for the ROS 2 package."""
+    """Returns {path: content} for the ROS 2 package, under a directory of its name, and with
+    the convert_package parameter, for the converter package too."""
     for required in ("package", "maintainer", "maintainer_email", "license"):
         if required not in params:
             raise GeneratorError(f"missing plugin parameter '{required}'")
@@ -224,4 +225,9 @@ def generate(model, params):
     msg_files = sorted(files)
     files["package.xml"] = package.package_xml()
     files["CMakeLists.txt"] = package.cmake_lists(msg_files)
+    files = {f"{package.name}/{path}": content for path, content in files.items()}
+    if "convert_package" in params:
+        from . import ros_convert  # imports this module, so not at the top
+        files.update({f"{params['convert_package']}/{path}": content
+                      for path, content in ros_convert.generate(model, params).items()})
     return files

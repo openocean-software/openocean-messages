@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Builds the generated ROS 2 packages and openocean_msgs_check with colcon, then
-# checks the messages from C++ and Python.
+# checks the messages from C++ and Python, and the converters to and from Protobuf.
 #
-# Usage: build_and_check.sh WORK_DIR PYTHON PACKAGE_DIR...
+# Usage: build_and_check.sh WORK_DIR PYTHON PACKAGES_DIR...
 set -eo pipefail
 
 work=$1
@@ -18,5 +18,7 @@ colcon --log-base "${work}/log" build \
 
 # shellcheck disable=SC1091
 source "${work}/install/setup.bash"
-"${work}/install/openocean_msgs_check/lib/openocean_msgs_check/check_messages"
+for check in check_messages check_convert check_convert_mapping; do
+    "${work}/install/openocean_msgs_check/lib/openocean_msgs_check/${check}"
+done
 "${python}" "${here}/check_messages.py"

@@ -44,7 +44,7 @@ ctest --test-dir build
 |---|---|---|---|
 | `--cxx` | `OPENOCEAN_CPP` | ON | `openocean_messages` library (`#include "openocean/messages/navigation.pb.h"`) |
 | `--python` | `OPENOCEAN_PYTHON` | OFF | `build/python` (`from openocean.messages import navigation_pb2`) |
-| `--ros` | `OPENOCEAN_ROS` | OFF | `build/ros/openocean_msgs` ROS 2 package source, to build with colcon |
+| `--ros` | `OPENOCEAN_ROS` | OFF | `build/ros/openocean_msgs` and `build/ros/openocean_msgs_convert` ROS 2 package sources, to build with colcon |
 | `--nanopb` | `OPENOCEAN_NANOPB` | OFF | `openocean_messages_nanopb` C library (`#include "openocean/messages/navigation.pb.h"`, from `build/nanopb`) |
 | `--rust` | `OPENOCEAN_RUST` | OFF | `openocean-messages` crate in `rust/` (prost), built into `build/rust` |
 | `--lcm` | `OPENOCEAN_LCM` | OFF | `openocean_messages_lcm` LCM types (`#include "openocean/navigation_t.hpp"`); with `--cxx`, also `openocean_messages_lcm_convert` (`#include "openocean/lcm_convert.h"`) |
@@ -83,6 +83,8 @@ colcon build --base-paths build/ros
 | `google.protobuf.Timestamp`, `Duration` | `int64_t` microseconds |
 
 ### Protobuf to ROS 2
+
+`protoc-gen-ros` writes two packages: `openocean_msgs`, with the messages, and `openocean_msgs_convert`, which builds the Protobuf C++ library and provides `to_ros()` and `from_ros()` overloads for each message (`#include <openocean_msgs_convert/convert.hpp>`, target `openocean_msgs_convert::openocean_msgs_convert`).
 
 | Protobuf | ROS 2 |
 |---|---|
