@@ -25,10 +25,10 @@ Messages are defined in Protobuf. Every numeric field declares its units as a [U
 
 ## Building
 
-Install the dependencies (Ubuntu), then build with CMake and Ninja:
+Install the dependencies (Ubuntu) for the outputs you want, then build with CMake and Ninja:
 
 ```
-./init.sh
+./init.sh --cxx --python --ros
 ./build.sh
 ctest --test-dir build
 ```
@@ -37,18 +37,19 @@ ctest --test-dir build
 
 ### Outputs
 
-Select any combination with CMake options:
+| `init.sh` | CMake option | Default | Output |
+|---|---|---|---|
+| `--cxx` | `OPENOCEAN_CPP` | ON | `openocean_messages` library (`#include "openocean/messages/navigation.pb.h"`) |
+| `--python` | `OPENOCEAN_PYTHON` | OFF | `build/python` (`from openocean.messages import navigation_pb2`) |
+| `--ros` | `OPENOCEAN_ROS` | OFF | `build/ros/openocean_msgs` ROS 2 package source, to build with colcon |
 
-| Option | Default | Output |
-|---|---|---|
-| `OPENOCEAN_CPP` | ON | `openocean_messages` library (`#include "openocean/messages/navigation.pb.h"`) |
-| `OPENOCEAN_PYTHON` | OFF | `build/python` (`from openocean.messages import navigation_pb2`) |
-| `OPENOCEAN_ROS` | OFF | `build/ros/openocean_msgs` ROS 2 package source, to build with colcon |
+`init.sh` with no options is `--cxx`. It writes `init.cmake`, which sets the option defaults for new build directories to the outputs it installed; `-D` still overrides them.
 
-For example, with ROS 2 sourced (`./init.sh --ros` installs what's needed):
+For example, with ROS 2 sourced:
 
 ```
-./build.sh -DOPENOCEAN_ROS=ON
+./init.sh --ros
+./build.sh
 colcon build --base-paths build/ros
 ```
 

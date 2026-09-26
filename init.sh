@@ -1,29 +1,45 @@
 #!/usr/bin/env bash
-# Installs the build dependencies on Ubuntu.
+# Installs the Ubuntu dependencies for the selected outputs, and writes init.cmake so
+# that new build directories enable the same outputs by default.
 #
-# Usage: init.sh [--ros]
-#   --ros  also install what's needed to build the generated ROS 2 package
-#          (needs the ROS 2 apt repository: https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
+# Usage: init.sh [--cxx] [--python] [--ros]   (default: --cxx)
+#   --cxx     C++ Protobuf library (and its UDUNITS-2 units test)
+#   --python  Python Protobuf modules
+#   --ros     ROS 2 message package, built with colcon. Needs the ROS 2 apt repository:
+#             https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html
 set -euo pipefail
 
-SUDO=""
-if [ "$(id -u)" -ne 0 ]; then
-    SUDO=sudo
+cd "$(dirname "$0")"
+
+cxx=OFF
+python=OFF
+ros=OFF
+[ $# -eq 0 ] && cxx=ON
+for arg in "$@"; do
+    case "${arg}" in
+        --cxx) cxx=ON ;;
+        --python) python=ON ;;
+        --ros) ros=ON ;;
+        -h | --help)
+            sed -n '5,10s/^# \{0,1\}//p' "$0"
+            exit 0
+            ;;
+        *)
+            sed -n '5,10s/^# \{0,1\}//p' "$0" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# CMake's FindProtobuf needs a compiler and the Protobuf headers even to find protoc
+packages=(cmake ninja-build g++ libprotobuf-dev protobuf-compiler)
+if [ "${cxx}" = ON ]; then
+    packages+=(pkg-config libudunits2-dev)
 fi
-
-packages=(
-    cmake
-    ninja-build
-    g++
-    pkg-config
-    libprotobuf-dev
-    protobuf-compiler
-    libudunits2-dev
-    python3
-    python3-protobuf
-)
-
-if [ "${1:-}" = "--ros" ]; then
+if [ "${python}" = ON ] || [ "${ros}" = ON ]; then
+    packages+=(python3 python3-protobuf)
+fi
+if [ "${ros}" = ON ]; then
     ROS_DISTRO=${ROS_DISTRO:-jazzy}
     packages+=(
         "ros-${ROS_DISTRO}-ament-cmake"
@@ -34,5 +50,17 @@ if [ "${1:-}" = "--ros" ]; then
     )
 fi
 
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+    SUDO=sudo
+fi
 $SUDO apt-get update
 $SUDO apt-get install -y --no-install-recommends "${packages[@]}"
+
+cat > init.cmake <<EOF
+# Written by init.sh
+set(OPENOCEAN_CPP_DEFAULT ${cxx})
+set(OPENOCEAN_PYTHON_DEFAULT ${python})
+set(OPENOCEAN_ROS_DEFAULT ${ros})
+EOF
+echo "Wrote init.cmake: OPENOCEAN_CPP=${cxx} OPENOCEAN_PYTHON=${python} OPENOCEAN_ROS=${ros}"
