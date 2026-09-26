@@ -22,11 +22,11 @@ if(OPENOCEAN_ROS)
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/ros ${PROJECT_SOURCE_DIR}/src
     OPTIONS ${OPENOCEAN_ROS_OPTIONS})
 
-  # To accept intended changes, copy the generated packages over golden/
+  # To accept intended changes, copy the generated packages over expected/
   foreach(package ${OPENOCEAN_ROS_DIR}/${OPENOCEAN_ROS_PACKAGE} ${ros_test_dir}/openocean_test_msgs)
     get_filename_component(name ${package} NAME)
-    add_test(NAME ros_golden_${name}
-      COMMAND diff -r ${CMAKE_CURRENT_SOURCE_DIR}/golden/${name} ${package})
+    add_test(NAME ros_expected_${name}
+      COMMAND diff -r ${CMAKE_CURRENT_SOURCE_DIR}/expected/${name} ${package})
   endforeach()
 
   find_program(COLCON colcon)

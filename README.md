@@ -66,4 +66,4 @@ colcon build --base-paths build/ros
 | `google.protobuf.Duration` | `builtin_interfaces/Duration` |
 | units | trailing `# [units]` comment |
 
-Field names that are Python or C++ keywords are rejected. `src/test/golden` holds the expected packages; after an intended change to the generator, copy the generated packages over it.
+Field names that are Python or C++ keywords are rejected. `src/test/expected` holds the packages the generator should produce; after an intended change to the generator, copy the generated packages over it.
