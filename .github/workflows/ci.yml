@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  all:
+    name: All outputs (Ubuntu ${{ matrix.ubuntu }})
+    runs-on: ubuntu-latest
+    container: ubuntu:${{ matrix.ubuntu }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ["24.04", "26.04"]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Add the ROS 2 apt repository
+        run: .github/ci/add-ros-apt-source.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Install dependencies
+        run: ./init.sh --cxx --python --ros --nanopb --rust
+      - name: Build
+        run: |
+          source /opt/ros/*/setup.bash
+          ./build.sh
+      - name: Test
+        run: |
+          source /opt/ros/*/setup.bash
+          ctest --test-dir build --output-on-failure --no-tests=error
+
+  each:
+    name: Each output alone (Ubuntu 26.04)
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Add the ROS 2 apt repository
+        run: .github/ci/add-ros-apt-source.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Install dependencies
+        run: ./init.sh --cxx --python --ros --nanopb --rust
+      - name: Build and test each output alone
+        run: |
+          source /opt/ros/*/setup.bash
+          outputs=(CPP PYTHON ROS NANOPB RUST)
+          for output in "${outputs[@]}"; do
+            echo "::group::${output}"
+            args=()
+            for o in "${outputs[@]}"; do
+              if [ "${o}" = "${output}" ]; then args+=("-DOPENOCEAN_${o}=ON"); else args+=("-DOPENOCEAN_${o}=OFF"); fi
+            done
+            # Only the C++ output may need a C++ compiler
+            if [ "${output}" != CPP ]; then args+=(-DCMAKE_CXX_COMPILER=/nonexistent/g++); fi
+            BUILD_DIR="build-${output}" ./build.sh "${args[@]}"
+            ctest --test-dir "build-${output}" --output-on-failure --no-tests=error
+            echo "::endgroup::"
+          done
