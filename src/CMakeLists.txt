@@ -58,6 +58,17 @@ if(OPENOCEAN_NANOPB)
   target_link_libraries(openocean_messages_nanopb PUBLIC nanopb::protobuf-nanopb-static)
 endif()
 
+if(OPENOCEAN_LCM)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/generators/ProtobufGenerateLcm.cmake)
+  protobuf_generate_lcm(
+    TARGET openocean_messages_lcm
+    OUTPUT_DIR ${PROJECT_BINARY_DIR}/lcm
+    HEADER openocean/lcm_convert.h
+    PROTOS ${OPENOCEAN_PROTOS}
+    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    LINK_LIBRARIES openocean_messages)
+endif()
+
 if(OPENOCEAN_RUST)
   add_custom_target(openocean_messages_rust ALL
     COMMAND ${OPENOCEAN_CARGO} build --manifest-path ${OPENOCEAN_CARGO_MANIFEST}

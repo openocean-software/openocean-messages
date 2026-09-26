@@ -1,0 +1,42 @@
+// Generated from openocean.test.Mapping (mapping.proto)
+//
+// Covers each mapping rule (ROS 2, LCM) that openocean's own messages don't
+
+package openocean.test;
+
+struct mapping_t
+{
+    double implicit_presence;  // [m]
+    boolean has_explicit_presence;
+    float explicit_presence;  // [s]
+    int32_t num_counts;
+    int32_t counts[num_counts];  // [1]
+    int32_t num_data;
+    byte data[num_data];
+    mapping_color_t color;
+    boolean has_sign;
+    mapping_signed_t sign;
+    int64_t stamp_ms;  // [milliseconds since 1970-01-01 00:00:00 UTC]
+    boolean has_stamp;
+    int64_t stamp;  // [microseconds since 1970-01-01 00:00:00 UTC]
+    boolean has_period;
+    int64_t period;  // [microseconds]
+    boolean has_inner;
+    mapping_inner_t inner;
+    int32_t num_inners;
+    mapping_inner_t inners[num_inners];
+
+    // one of a or b
+    const int32_t CHOICE_NOT_SET = 0;
+    const int32_t CHOICE_A = 12;
+    const int32_t CHOICE_B = 13;
+    int32_t choice_case;
+    double a;  // [m]
+    mapping_inner_t b;
+    int32_t num_table;
+    mapping_table_entry_t table[num_table];  // [1]
+    int32_t num_by_id;
+    mapping_by_id_entry_t by_id[num_by_id];
+    int64_t big;  // [1]
+    int64_t small;  // [1]
+}

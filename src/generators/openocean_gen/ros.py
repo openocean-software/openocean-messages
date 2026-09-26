@@ -4,7 +4,7 @@ import keyword
 import re
 from xml.sax.saxutils import escape
 
-from .model import F, GeneratorError, upper_snake
+from .model import CPP_KEYWORDS, F, GeneratorError, enum_value_names
 
 _SCALARS = {
     F.TYPE_DOUBLE: "float64",
@@ -36,17 +36,6 @@ _FIELD_NAME = _PACKAGE_NAME
 _MESSAGE_NAME = re.compile(r"^[A-Z][A-Za-z0-9]*$")
 _CONSTANT_NAME = re.compile(r"^[A-Z]([A-Z0-9_]?[A-Z0-9]+)*$")
 
-_CPP_KEYWORDS = set("""
-alignas alignof and and_eq asm auto bitand bitor bool break case catch char char8_t char16_t
-char32_t class compl concept const consteval constexpr constinit const_cast continue co_await
-co_return co_yield decltype default delete do double dynamic_cast else enum explicit export
-extern false float for friend goto if inline int long mutable namespace new noexcept not not_eq
-nullptr operator or or_eq private protected public register reinterpret_cast requires return
-short signed sizeof static static_assert static_cast struct switch template this thread_local
-throw true try typedef typeid typename union unsigned using virtual void volatile wchar_t while
-xor xor_eq
-""".split())
-
 
 def _comment_lines(lines):
     return [f"# {line}" if line else "#" for line in lines]
@@ -55,7 +44,7 @@ def _comment_lines(lines):
 def _check_field_name(owner, name):
     if not _FIELD_NAME.match(name):
         raise GeneratorError(f"{owner}.{name}: not a valid ROS 2 field name")
-    if keyword.iskeyword(name) or name in _CPP_KEYWORDS:
+    if keyword.iskeyword(name) or name in CPP_KEYWORDS:
         raise GeneratorError(
             f"{owner}.{name}: is a Python or C++ keyword, which ROS 2 can't generate")
 
@@ -163,12 +152,8 @@ class _Package:
             raise GeneratorError(f"{e.full_name}: {e.flat_name} is not a valid ROS 2 message name")
         owner = e.full_name[1:]
         out = self.header(e, e.comments)
-        prefix = upper_snake(e.proto_name) + "_"
-        stripped = [v.name[len(prefix):] for v in e.values if v.name.startswith(prefix)]
-        strip = len(stripped) == len(e.values) and all(_CONSTANT_NAME.match(s) for s in stripped)
         vtype = _smallest([v.number for v in e.values], "uint8", "int32")
-        for v in e.values:
-            name = v.name[len(prefix):] if strip else v.name
+        for v, name in zip(e.values, enum_value_names(e, _CONSTANT_NAME)):
             _check_constant_name(owner, name)
             if v.comments.leading:
                 out += _comment_lines(v.comments.leading)

@@ -1,6 +1,6 @@
 # Generated from openocean.test.Mapping (mapping.proto)
 #
-# Covers each protoc-gen-ros mapping rule that openocean's own messages don't
+# Covers each mapping rule (ROS 2, LCM) that openocean's own messages don't
 
 float64 implicit_presence  # [m]
 bool has_explicit_presence
@@ -27,3 +27,6 @@ uint8 choice_case
 float64 a  # [m]
 MappingInner b
 MappingTableEntry[] table  # [1]
+MappingByIdEntry[] by_id
+uint64 big  # [1]
+uint32 small  # [1]

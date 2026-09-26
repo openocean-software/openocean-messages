@@ -14,6 +14,7 @@ Messages are defined in Protobuf. Every numeric field declares its units as a [U
     - nanopb.options: nanopb size limits
   - generators: protoc plugins that generate other formats
     - protoc-gen-ros: ROS 2 interface package
+    - protoc-gen-lcm: LCM types and C++ converters
   - test: Checks that all units parse with UDUNITS-2 and that fields ControlSetpoint shares with Navigation have the same type and units, and tests for each output
 - rust: Rust crate (`build.rs` generates the types with prost)
 
@@ -30,7 +31,7 @@ Messages are defined in Protobuf. Every numeric field declares its units as a [U
 Install the dependencies (Ubuntu) for the outputs you want, then build with CMake and Ninja:
 
 ```
-./init.sh --cxx --python --ros --nanopb --rust
+./init.sh --cxx --python --ros --nanopb --rust --lcm
 ./build.sh
 ctest --test-dir build
 ```
@@ -46,6 +47,7 @@ ctest --test-dir build
 | `--ros` | `OPENOCEAN_ROS` | OFF | `build/ros/openocean_msgs` ROS 2 package source, to build with colcon |
 | `--nanopb` | `OPENOCEAN_NANOPB` | OFF | `openocean_messages_nanopb` C library (`#include "openocean/messages/navigation.pb.h"`, from `build/nanopb`) |
 | `--rust` | `OPENOCEAN_RUST` | OFF | `openocean-messages` crate in `rust/` (prost), built into `build/rust` |
+| `--lcm` | `OPENOCEAN_LCM` | OFF | `openocean_messages_lcm` LCM types and C++ converters (`#include "openocean/lcm_convert.h"`); needs `--cxx` |
 
 `init.sh` with no options is `--cxx`. It writes `init.cmake`, which sets the option defaults for new build directories to the outputs it installed; `-D` still overrides them.
 
@@ -65,6 +67,21 @@ colcon build --base-paths build/ros
 
 `rust/` is a Cargo crate whose `build.rs` generates the types with [prost](https://github.com/tokio-rs/prost) from `src/openocean/messages`. It can also be built with cargo directly (`cargo build` in `rust/`, with `protoc` on the `PATH`), or used from another crate as a path dependency. `rust-version` is 1.75 (Ubuntu 24.04's cargo), and `Cargo.lock` pins dependencies that build with it.
 
+### Protobuf to LCM
+
+`protoc-gen-lcm` writes one `.lcm` type per message and enum (package `openocean`, e.g. `navigation_t`, `navigation_geodetic_t`), C++ types from `lcm-gen`, and `openocean/lcm_convert.h` with `to_lcm()` and `from_lcm()` overloads for each message.
+
+| Protobuf | LCM |
+|---|---|
+| `optional` field, or singular message field | `boolean has_<field>` before the field |
+| nested message or enum | flattened: `Navigation.Geodetic` → `navigation_geodetic_t` |
+| enum | struct with the values as `const int32_t` (common prefix removed) and an `int32_t value` |
+| `oneof` | its fields, plus `int32_t <oneof>_case` and constants holding the field numbers |
+| `repeated`, `map` | `int32_t num_<field>` and a variable-length array (map entries sorted by key) |
+| `bytes` | `int32_t num_<field>` and `byte[]` |
+| `uint32`, `uint64` | `int64_t` (the converter throws for a `uint64` above `INT64_MAX`) |
+| `google.protobuf.Timestamp`, `Duration` | `int64_t` microseconds |
+
 ### Protobuf to ROS 2
 
 | Protobuf | ROS 2 |
@@ -79,7 +96,9 @@ colcon build --base-paths build/ros
 | `google.protobuf.Duration` | `builtin_interfaces/Duration` |
 | units | trailing `# [units]` comment |
 
-Field names that are Python or C++ keywords are rejected. `src/test/expected` holds the package the generator should produce from `src/test/ros/mapping.proto`; after an intended change to the generator, run `ninja -C build update_expected` and review the diff.
+Field names that are Python or C++ keywords are rejected.
+
+`src/test/expected` holds what the ROS 2 and LCM generators should produce from `src/test/mapping.proto`; after an intended change to a generator, run `ninja -C build update_expected` and review the diff.
 
 ## License
 

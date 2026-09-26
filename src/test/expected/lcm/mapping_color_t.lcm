@@ -1,0 +1,13 @@
+// Generated from openocean.test.Mapping.Color (mapping.proto)
+//
+// Values share the COLOR_ prefix, so it is stripped
+
+package openocean.test;
+
+struct mapping_color_t
+{
+    const int32_t RED = 0;
+    const int32_t GREEN = 1;  // trailing value comment
+
+    int32_t value;
+}

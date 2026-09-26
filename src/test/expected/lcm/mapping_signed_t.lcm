@@ -1,0 +1,13 @@
+// Generated from openocean.test.Mapping.Signed (mapping.proto)
+//
+// No common prefix, and a negative value, so kept as is in int32
+
+package openocean.test;
+
+struct mapping_signed_t
+{
+    const int32_t ZERO = 0;
+    const int32_t NEGATIVE = -1;
+
+    int32_t value;
+}

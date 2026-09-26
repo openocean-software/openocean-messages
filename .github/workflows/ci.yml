@@ -29,7 +29,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Install dependencies
-        run: ./init.sh --cxx --python --ros --nanopb --rust
+        run: ./init.sh --cxx --python --ros --nanopb --rust --lcm
       - name: Build
         run: |
           source /opt/ros/*/setup.bash
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        output: [cxx, python, ros, nanopb, rust]
+        output: [cxx, python, ros, nanopb, rust, lcm]
     steps:
       - uses: actions/checkout@v5
       - name: Add the ROS 2 apt repository
@@ -59,9 +59,9 @@ jobs:
       - name: Build
         run: |
           if [ -d /opt/ros ]; then source /opt/ros/*/setup.bash; fi
-          # init.cmake selects the output; only the C++ output may need a C++ compiler
+          # init.cmake selects the output; only C++ (and LCM, which implies it) may need a C++ compiler
           args=()
-          if [ "${{ matrix.output }}" != cxx ]; then args+=(-DCMAKE_CXX_COMPILER=/nonexistent/g++); fi
+          case "${{ matrix.output }}" in cxx | lcm) ;; *) args+=(-DCMAKE_CXX_COMPILER=/nonexistent/g++) ;; esac
           ./build.sh "${args[@]}"
       - name: Test
         run: |

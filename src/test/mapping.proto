@@ -6,7 +6,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "openocean/messages/options.proto";
 
-// Covers each protoc-gen-ros mapping rule that openocean's own messages don't
+// Covers each mapping rule (ROS 2, LCM) that openocean's own messages don't
 message Mapping
 {
     // Values share the COLOR_ prefix, so it is stripped
@@ -49,4 +49,8 @@ message Mapping
     }
 
     map<string, double> table = 14 [(openocean.field).units = "1"];
+    map<int32, Inner> by_id = 15;
+
+    uint64 big = 16 [(openocean.field).units = "1"];
+    fixed32 small = 17 [(openocean.field).units = "1"];
 }

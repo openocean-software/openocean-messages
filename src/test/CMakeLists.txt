@@ -39,18 +39,16 @@ if(OPENOCEAN_ROS)
     TARGET openocean_test_msgs_ros
     PACKAGE openocean_test_msgs
     OUTPUT_DIR ${ros_test_dir}
-    PROTOS ros/mapping.proto
-    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/ros ${PROJECT_SOURCE_DIR}/src
+    PROTOS mapping.proto
+    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src
     OPTIONS ${OPENOCEAN_ROS_OPTIONS})
 
   set(expected ${CMAKE_CURRENT_SOURCE_DIR}/expected/openocean_test_msgs)
   add_test(NAME ros_expected COMMAND diff -r ${expected} ${ros_test_dir}/openocean_test_msgs)
-  add_custom_target(update_expected
+  list(APPEND update_expected
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${expected}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${ros_test_dir}/openocean_test_msgs ${expected}
-    COMMENT "Updating ${expected}"
-    VERBATIM)
-  add_dependencies(update_expected openocean_test_msgs_ros)
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${ros_test_dir}/openocean_test_msgs ${expected})
+  list(APPEND update_expected_depends openocean_test_msgs_ros)
 
   find_program(COLCON colcon)
   if(COLCON AND DEFINED ENV{AMENT_PREFIX_PATH})
@@ -61,4 +59,43 @@ if(OPENOCEAN_ROS)
   else()
     message(STATUS "colcon or a sourced ROS 2 environment not found: skipping the ros_build test")
   endif()
+endif()
+
+if(OPENOCEAN_LCM)
+  add_library(openocean_test_messages)
+  protobuf_generate(
+    TARGET openocean_test_messages
+    LANGUAGE cpp
+    PROTOS mapping.proto
+    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src
+    PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  target_include_directories(openocean_test_messages PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+  target_link_libraries(openocean_test_messages PUBLIC openocean_messages)
+
+  set(lcm_test_dir ${CMAKE_CURRENT_BINARY_DIR}/lcm)
+  protobuf_generate_lcm(
+    TARGET openocean_test_messages_lcm
+    OUTPUT_DIR ${lcm_test_dir}
+    HEADER openocean/test/lcm_convert.h
+    PROTOS mapping.proto
+    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src
+    LINK_LIBRARIES openocean_test_messages)
+
+  add_executable(check_lcm lcm/check_messages.cpp)
+  target_link_libraries(check_lcm PRIVATE openocean_messages_lcm openocean_test_messages_lcm)
+  add_test(NAME lcm_messages COMMAND check_lcm)
+
+  set(expected ${CMAKE_CURRENT_SOURCE_DIR}/expected/lcm)
+  add_test(NAME lcm_expected COMMAND diff -r ${expected} ${lcm_test_dir}/protoc-gen-lcm)
+  list(APPEND update_expected
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${expected}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${lcm_test_dir}/protoc-gen-lcm ${expected})
+  list(APPEND update_expected_depends openocean_test_messages_lcm_generate)
+endif()
+
+if(update_expected)
+  add_custom_target(update_expected ${update_expected}
+    COMMENT "Updating ${CMAKE_CURRENT_SOURCE_DIR}/expected"
+    VERBATIM)
+  add_dependencies(update_expected ${update_expected_depends})
 endif()

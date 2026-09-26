@@ -2,7 +2,7 @@
 # Installs the Ubuntu dependencies for the selected outputs, and writes init.cmake so
 # that new build directories enable the same outputs by default.
 #
-# Usage: init.sh [--cxx] [--python] [--ros] [--nanopb] [--rust]   (default: --cxx)
+# Usage: init.sh [--cxx] [--python] [--ros] [--nanopb] [--rust] [--lcm]   (default: --cxx)
 #   --cxx     C++ Protobuf library (and its UDUNITS-2 units test)
 #   --python  Python Protobuf modules
 #   --ros     ROS 2 message package, built with colcon. Needs the ROS 2 apt repository:
@@ -10,6 +10,7 @@
 #             ROS_DISTRO defaults to jazzy on Ubuntu 24.04 and lyrical on 26.04
 #   --nanopb  nanopb C library
 #   --rust    Rust crate (prost), built with cargo
+#   --lcm     LCM types and C++ converters to and from Protobuf (implies --cxx)
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -19,6 +20,7 @@ python=OFF
 ros=OFF
 nanopb=OFF
 rust=OFF
+lcm=OFF
 [ $# -eq 0 ] && cxx=ON
 for arg in "$@"; do
     case "${arg}" in
@@ -27,12 +29,16 @@ for arg in "$@"; do
         --ros) ros=ON ;;
         --nanopb) nanopb=ON ;;
         --rust) rust=ON ;;
+        --lcm)
+            lcm=ON
+            cxx=ON
+            ;;
         -h | --help)
-            sed -n '5,13s/^# \{0,1\}//p' "$0"
+            sed -n '5,14s/^# \{0,1\}//p' "$0"
             exit 0
             ;;
         *)
-            sed -n '5,13s/^# \{0,1\}//p' "$0" >&2
+            sed -n '5,14s/^# \{0,1\}//p' "$0" >&2
             exit 1
             ;;
     esac
@@ -43,7 +49,7 @@ packages=(cmake ninja-build protobuf-compiler libprotobuf-dev)
 if [ "${cxx}" = ON ]; then
     packages+=(g++ pkg-config libudunits2-dev)
 fi
-if [ "${python}" = ON ] || [ "${ros}" = ON ]; then
+if [ "${python}" = ON ] || [ "${ros}" = ON ] || [ "${lcm}" = ON ]; then
     packages+=(python3 python3-protobuf)
 fi
 if [ "${ros}" = ON ]; then
@@ -75,6 +81,9 @@ if [ "${rust}" = ON ]; then
     # cargo fetches crates over HTTPS
     packages+=(cargo ca-certificates)
 fi
+if [ "${lcm}" = ON ]; then
+    packages+=(liblcm-dev)
+fi
 
 SUDO=""
 if [ "$(id -u)" -ne 0 ]; then
@@ -90,5 +99,6 @@ set(OPENOCEAN_PYTHON_DEFAULT ${python})
 set(OPENOCEAN_ROS_DEFAULT ${ros})
 set(OPENOCEAN_NANOPB_DEFAULT ${nanopb})
 set(OPENOCEAN_RUST_DEFAULT ${rust})
+set(OPENOCEAN_LCM_DEFAULT ${lcm})
 EOF
-echo "Wrote init.cmake: OPENOCEAN_CPP=${cxx} OPENOCEAN_PYTHON=${python} OPENOCEAN_ROS=${ros} OPENOCEAN_NANOPB=${nanopb} OPENOCEAN_RUST=${rust}"
+echo "Wrote init.cmake: OPENOCEAN_CPP=${cxx} OPENOCEAN_PYTHON=${python} OPENOCEAN_ROS=${ros} OPENOCEAN_NANOPB=${nanopb} OPENOCEAN_RUST=${rust} OPENOCEAN_LCM=${lcm}"

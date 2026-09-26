@@ -5,14 +5,27 @@ neither ROS 2 nor LCM can nest type definitions.
 """
 
 import re
+import sys
 from dataclasses import dataclass, field as dc_field
 from typing import List, Optional
 
 from google.protobuf import descriptor_pb2, descriptor_pool, message_factory
+from google.protobuf.compiler import plugin_pb2
 
 F = descriptor_pb2.FieldDescriptorProto
 
 UNITS_EXTENSION = "openocean.field"
+
+CPP_KEYWORDS = set("""
+alignas alignof and and_eq asm auto bitand bitor bool break case catch char char8_t char16_t
+char32_t class compl concept const consteval constexpr constinit const_cast continue co_await
+co_return co_yield decltype default delete do double dynamic_cast else enum explicit export
+extern false float for friend goto if inline int long mutable namespace new noexcept not not_eq
+nullptr operator or or_eq private protected public register reinterpret_cast requires return
+short signed sizeof static static_assert static_cast struct switch template this thread_local
+throw true try typedef typeid typename union unsigned using virtual void volatile wchar_t while
+xor xor_eq
+""".split())
 
 # Seconds per unit for "<unit> since 1970-01-01 00:00:00 UTC"
 _EPOCH_UNITS = {
@@ -75,6 +88,7 @@ class Enum:
     flat_name: str
     proto_name: str
     file: str
+    package: str
     values: List[EnumValue]
     comments: Comments
 
@@ -84,6 +98,9 @@ class Message:
     full_name: str
     flat_name: str
     file: str
+    package: str
+    # Synthesized for a map<K, V> field, with key and value fields
+    map_entry: bool
     fields: List[Field]
     oneofs: List[Oneof]
     comments: Comments
@@ -183,6 +200,7 @@ def build(request):
                 flat_name=flat_scope + e.name,
                 proto_name=e.name,
                 file=file.name,
+                package=file.package,
                 values=[EnumValue(v.name, v.number,
                                   _comments(locations, path + [_ENUM_VALUE, i]))
                         for i, v in enumerate(e.value)],
@@ -216,7 +234,8 @@ def build(request):
             oneofs = [Oneof(m.oneof_decl[i].name, members,
                             _comments(locations, path + [_MESSAGE_ONEOF, i]))
                       for i, members in sorted(real_oneofs.items())]
-            messages.append(Message(full_name, flat_name, file.name, fields, oneofs,
+            messages.append(Message(full_name, flat_name, file.name, file.package,
+                                    m.options.map_entry, fields, oneofs,
                                     _comments(locations, path)))
             for j, nested in enumerate(m.nested_type):
                 add_message(nested, full_name, flat_name, path + [_MESSAGE_NESTED, j])
@@ -238,6 +257,16 @@ def build(request):
     return Model(messages, enums, all_types)
 
 
+def enum_value_names(e, valid):
+    """The value names without the ENUM_NAME_ prefix that proto style gives them,
+    when every value has it and every stripped name matches valid."""
+    prefix = upper_snake(e.proto_name) + "_"
+    stripped = [v.name[len(prefix):] for v in e.values if v.name.startswith(prefix)]
+    if len(stripped) == len(e.values) and all(valid.match(name) for name in stripped):
+        return stripped
+    return [v.name for v in e.values]
+
+
 def upper_snake(camel):
     s = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", camel)
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s).upper()
@@ -251,3 +280,16 @@ def parse_parameters(parameter):
             raise GeneratorError(f"parameter '{item}' is not key=value")
         params[key.strip()] = value.strip()
     return params
+
+
+def run_plugin(generate):
+    """Runs a protoc plugin whose generate(model, params) returns {path: content}."""
+    request = plugin_pb2.CodeGeneratorRequest.FromString(sys.stdin.buffer.read())
+    response = plugin_pb2.CodeGeneratorResponse(
+        supported_features=plugin_pb2.CodeGeneratorResponse.FEATURE_PROTO3_OPTIONAL)
+    try:
+        for name, content in generate(build(request), parse_parameters(request.parameter)).items():
+            response.file.add(name=name, content=content)
+    except GeneratorError as e:
+        response.error = str(e)
+    sys.stdout.buffer.write(response.SerializeToString())

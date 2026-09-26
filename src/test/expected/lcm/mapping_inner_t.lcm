@@ -1,0 +1,8 @@
+// Generated from openocean.test.Mapping.Inner (mapping.proto)
+
+package openocean.test;
+
+struct mapping_inner_t
+{
+    string name;
+}
