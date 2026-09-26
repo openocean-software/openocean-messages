@@ -11,7 +11,7 @@ root=$(git -C "${here}" rev-parse --show-toplevel)
 cd "${root}"
 
 soversion() { sed -n 's/^set(OPENOCEAN_SOVERSION \([0-9]*\))$/\1/p'; }
-base_soversion=$(git show "${base}:CMakeLists.txt" | soversion)
+base_soversion=$( (git show "${base}:CMakeLists.txt" 2>/dev/null || true) | soversion)
 head_soversion=$(soversion < CMakeLists.txt)
 if [ -z "${base_soversion}" ]; then
     echo "${base} has no OPENOCEAN_SOVERSION, so no shared libraries to compare"

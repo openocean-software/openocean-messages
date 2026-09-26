@@ -24,7 +24,7 @@ compatibility() {
     else echo "0.0.${patch}"
     fi
 }
-base_version=$(git show "${base}:CMakeLists.txt" | version)
+base_version=$( (git show "${base}:CMakeLists.txt" 2>/dev/null || true) | version)
 head_version=$(version < CMakeLists.txt)
 
 if "${buf}" breaking --against ".git#ref=$(git rev-parse "${base}")" --against-config buf.yaml; then
