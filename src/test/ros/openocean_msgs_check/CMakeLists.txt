@@ -11,8 +11,8 @@ add_executable(check_messages check_messages.cpp)
 target_link_libraries(check_messages
   ${openocean_msgs_TARGETS}
   ${openocean_test_msgs_TARGETS})
-# Separate executables, since both converter packages build options.proto into their Protobuf
-# library, and Protobuf refuses to register the same file twice in one process
+# Separate executables: both converter packages compile options.proto into their shared
+# libraries, and Protobuf aborts when one process registers it twice
 add_executable(check_convert check_convert.cpp)
 target_link_libraries(check_convert openocean_msgs_convert::openocean_msgs_convert)
 add_executable(check_convert_mapping check_convert_mapping.cpp)

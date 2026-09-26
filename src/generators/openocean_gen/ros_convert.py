@@ -244,8 +244,8 @@ find_package(ament_cmake REQUIRED)
 find_package({self.ros_package} REQUIRED)
 find_package(Protobuf REQUIRED)
 
-add_library(${{PROJECT_NAME}} STATIC)
-set_target_properties(${{PROJECT_NAME}} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+add_library(${{PROJECT_NAME}})
 protobuf_generate(
   TARGET ${{PROJECT_NAME}}
   LANGUAGE cpp

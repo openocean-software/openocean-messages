@@ -49,6 +49,8 @@ ctest --test-dir build
 | `--rust` | `OPENOCEAN_RUST` | OFF | `openocean-messages` crate in `rust/` (prost), built into `build/rust` |
 | `--lcm` | `OPENOCEAN_LCM` | OFF | `openocean_messages_lcm` LCM types (`#include "openocean/navigation_t.hpp"`); with `--cxx`, also `openocean_messages_lcm_convert` (`#include "openocean/lcm_convert.h"`) |
 
+Libraries build shared by default (`-DBUILD_SHARED_LIBS=OFF` builds them static), as do the generated ROS 2 converter packages.
+
 `init.sh` with no options is `--cxx`. It writes `init.cmake`, which sets the option defaults for new build directories to the outputs it installed; `-D` still overrides them.
 
 For example, with ROS 2 sourced:

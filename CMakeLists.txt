@@ -14,6 +14,7 @@ option(OPENOCEAN_ROS "Generate the ROS 2 message package" ${OPENOCEAN_ROS_DEFAUL
 option(OPENOCEAN_NANOPB "Build the nanopb C library" ${OPENOCEAN_NANOPB_DEFAULT})
 option(OPENOCEAN_RUST "Build the Rust crate with cargo" ${OPENOCEAN_RUST_DEFAULT})
 option(OPENOCEAN_LCM "Generate LCM types (and with OPENOCEAN_CPP, converters to and from Protobuf)" ${OPENOCEAN_LCM_DEFAULT})
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 if(OPENOCEAN_CPP OR OPENOCEAN_LCM)
   enable_language(CXX)
