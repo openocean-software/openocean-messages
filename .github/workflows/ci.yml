@@ -39,31 +39,31 @@ jobs:
           source /opt/ros/*/setup.bash
           ctest --test-dir build --output-on-failure --no-tests=error
 
-  each:
-    name: Each output alone (Ubuntu 26.04)
+  alone:
+    name: ${{ matrix.output }} alone (Ubuntu 26.04)
     runs-on: ubuntu-latest
     container: ubuntu:26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        output: [cxx, python, ros, nanopb, rust]
     steps:
       - uses: actions/checkout@v5
       - name: Add the ROS 2 apt repository
+        if: matrix.output == 'ros'
         run: .github/ci/add-ros-apt-source.sh
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Install dependencies
-        run: ./init.sh --cxx --python --ros --nanopb --rust
-      - name: Build and test each output alone
+        run: ./init.sh --${{ matrix.output }}
+      - name: Build
         run: |
-          source /opt/ros/*/setup.bash
-          outputs=(CPP PYTHON ROS NANOPB RUST)
-          for output in "${outputs[@]}"; do
-            echo "::group::${output}"
-            args=()
-            for o in "${outputs[@]}"; do
-              if [ "${o}" = "${output}" ]; then args+=("-DOPENOCEAN_${o}=ON"); else args+=("-DOPENOCEAN_${o}=OFF"); fi
-            done
-            # Only the C++ output may need a C++ compiler
-            if [ "${output}" != CPP ]; then args+=(-DCMAKE_CXX_COMPILER=/nonexistent/g++); fi
-            BUILD_DIR="build-${output}" ./build.sh "${args[@]}"
-            ctest --test-dir "build-${output}" --output-on-failure --no-tests=error
-            echo "::endgroup::"
-          done
+          if [ -d /opt/ros ]; then source /opt/ros/*/setup.bash; fi
+          # init.cmake selects the output; only the C++ output may need a C++ compiler
+          args=()
+          if [ "${{ matrix.output }}" != cxx ]; then args+=(-DCMAKE_CXX_COMPILER=/nonexistent/g++); fi
+          ./build.sh "${args[@]}"
+      - name: Test
+        run: |
+          if [ -d /opt/ros ]; then source /opt/ros/*/setup.bash; fi
+          ctest --test-dir build --output-on-failure --no-tests=error

@@ -70,7 +70,8 @@ if [ "${nanopb}" = ON ]; then
     packages+=(gcc nanopb libnanopb-dev)
 fi
 if [ "${rust}" = ON ]; then
-    packages+=(cargo)
+    # cargo fetches crates over HTTPS
+    packages+=(cargo ca-certificates)
 fi
 
 SUDO=""
