@@ -18,12 +18,20 @@ endif()
 
 if(OPENOCEAN_PYTHON)
   set(OPENOCEAN_PYTHON_DIR ${PROJECT_BINARY_DIR}/python)
-  protobuf_generate(
-    LANGUAGE python
-    OUT_VAR python_sources
-    PROTOS ${OPENOCEAN_PROTOS}
-    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-    PROTOC_OUT_DIR ${OPENOCEAN_PYTHON_DIR})
+  set(python_sources)
+  foreach(proto IN LISTS OPENOCEAN_PROTOS)
+    string(REGEX REPLACE "\\.proto$" "_pb2.py" python_source ${proto})
+    list(APPEND python_sources ${OPENOCEAN_PYTHON_DIR}/${python_source})
+  endforeach()
+  add_custom_command(
+    OUTPUT ${python_sources}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${OPENOCEAN_PYTHON_DIR}
+    COMMAND protobuf::protoc --python_out=${OPENOCEAN_PYTHON_DIR}
+            -I ${CMAKE_CURRENT_SOURCE_DIR} ${OPENOCEAN_PROTOS}
+    DEPENDS ${OPENOCEAN_PROTOS}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Generating Python Protobuf modules"
+    VERBATIM)
   add_custom_target(openocean_messages_python ALL DEPENDS ${python_sources})
 endif()
 

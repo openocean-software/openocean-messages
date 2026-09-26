@@ -31,10 +31,9 @@ for arg in "$@"; do
     esac
 done
 
-# CMake's FindProtobuf needs a compiler and the Protobuf headers even to find protoc
-packages=(cmake ninja-build g++ libprotobuf-dev protobuf-compiler)
+packages=(cmake ninja-build protobuf-compiler)
 if [ "${cxx}" = ON ]; then
-    packages+=(pkg-config libudunits2-dev)
+    packages+=(g++ libprotobuf-dev pkg-config libudunits2-dev)
 fi
 if [ "${python}" = ON ] || [ "${ros}" = ON ]; then
     packages+=(python3 python3-protobuf)
@@ -42,6 +41,7 @@ fi
 if [ "${ros}" = ON ]; then
     ROS_DISTRO=${ROS_DISTRO:-jazzy}
     packages+=(
+        g++
         "ros-${ROS_DISTRO}-ament-cmake"
         "ros-${ROS_DISTRO}-rosidl-default-generators"
         "ros-${ROS_DISTRO}-rosidl-default-runtime"
