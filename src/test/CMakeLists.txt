@@ -22,12 +22,14 @@ if(OPENOCEAN_ROS)
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/ros ${PROJECT_SOURCE_DIR}/src
     OPTIONS ${OPENOCEAN_ROS_OPTIONS})
 
-  # To accept intended changes, copy the generated packages over expected/
-  foreach(package ${OPENOCEAN_ROS_DIR}/${OPENOCEAN_ROS_PACKAGE} ${ros_test_dir}/openocean_test_msgs)
-    get_filename_component(name ${package} NAME)
-    add_test(NAME ros_expected_${name}
-      COMMAND diff -r ${CMAKE_CURRENT_SOURCE_DIR}/expected/${name} ${package})
-  endforeach()
+  set(expected ${CMAKE_CURRENT_SOURCE_DIR}/expected/openocean_test_msgs)
+  add_test(NAME ros_expected COMMAND diff -r ${expected} ${ros_test_dir}/openocean_test_msgs)
+  add_custom_target(update_expected
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${expected}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${ros_test_dir}/openocean_test_msgs ${expected}
+    COMMENT "Updating ${expected}"
+    VERBATIM)
+  add_dependencies(update_expected openocean_test_msgs_ros)
 
   find_program(COLCON colcon)
   if(COLCON AND DEFINED ENV{AMENT_PREFIX_PATH})
