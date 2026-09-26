@@ -1,4 +1,4 @@
-// Checks the generated LCM types and the Protobuf <-> LCM converters:
+// Checks the Protobuf <-> LCM converters:
 //
 //  1. Navigation, ControlSetpoint, and the test Mapping message (which covers every
 //     mapping rule: presence, repeated, bytes, enums, oneof, maps, well-known types,

@@ -60,13 +60,19 @@ endif()
 
 if(OPENOCEAN_LCM)
   include(${CMAKE_CURRENT_SOURCE_DIR}/generators/ProtobufGenerateLcm.cmake)
+  set(converter)
+  if(OPENOCEAN_CPP)
+    set(converter
+      CONVERTER_TARGET openocean_messages_lcm_convert
+      HEADER openocean/lcm_convert.h
+      LINK_LIBRARIES openocean_messages)
+  endif()
   protobuf_generate_lcm(
     TARGET openocean_messages_lcm
     OUTPUT_DIR ${PROJECT_BINARY_DIR}/lcm
-    HEADER openocean/lcm_convert.h
     PROTOS ${OPENOCEAN_PROTOS}
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-    LINK_LIBRARIES openocean_messages)
+    ${converter})
 endif()
 
 if(OPENOCEAN_RUST)

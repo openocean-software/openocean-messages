@@ -13,18 +13,17 @@ option(OPENOCEAN_PYTHON "Generate the Python Protobuf modules" ${OPENOCEAN_PYTHO
 option(OPENOCEAN_ROS "Generate the ROS 2 message package" ${OPENOCEAN_ROS_DEFAULT})
 option(OPENOCEAN_NANOPB "Build the nanopb C library" ${OPENOCEAN_NANOPB_DEFAULT})
 option(OPENOCEAN_RUST "Build the Rust crate with cargo" ${OPENOCEAN_RUST_DEFAULT})
-option(OPENOCEAN_LCM "Generate LCM types and C++ converters to and from Protobuf" ${OPENOCEAN_LCM_DEFAULT})
+option(OPENOCEAN_LCM "Generate LCM types (and with OPENOCEAN_CPP, converters to and from Protobuf)" ${OPENOCEAN_LCM_DEFAULT})
 
-if(OPENOCEAN_LCM AND NOT OPENOCEAN_CPP)
-  message(FATAL_ERROR "OPENOCEAN_LCM converts to and from the C++ Protobuf types, so needs OPENOCEAN_CPP")
-endif()
-
-if(OPENOCEAN_CPP)
+if(OPENOCEAN_CPP OR OPENOCEAN_LCM)
   enable_language(CXX)
   if(((NOT DEFINED CMAKE_CXX_STANDARD) OR ("${CMAKE_CXX_STANDARD}" STREQUAL "03") OR ("${CMAKE_CXX_STANDARD}" STREQUAL "11") OR ("${CMAKE_CXX_STANDARD}" STREQUAL "14")))
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
   endif()
+endif()
+
+if(OPENOCEAN_CPP)
   find_package(Protobuf REQUIRED)
 else()
   # FindProtobuf needs a compiler and the Protobuf headers, but only protoc is used

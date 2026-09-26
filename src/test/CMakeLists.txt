@@ -62,35 +62,51 @@ if(OPENOCEAN_ROS)
 endif()
 
 if(OPENOCEAN_LCM)
-  add_library(openocean_test_messages)
-  protobuf_generate(
-    TARGET openocean_test_messages
-    LANGUAGE cpp
-    PROTOS mapping.proto
-    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src
-    PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
-  target_include_directories(openocean_test_messages PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-  target_link_libraries(openocean_test_messages PUBLIC openocean_messages)
-
   set(lcm_test_dir ${CMAKE_CURRENT_BINARY_DIR}/lcm)
+  set(converter)
+  if(OPENOCEAN_CPP)
+    add_library(openocean_test_messages)
+    protobuf_generate(
+      TARGET openocean_test_messages
+      LANGUAGE cpp
+      PROTOS mapping.proto
+      IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src
+      PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    target_include_directories(openocean_test_messages PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+    target_link_libraries(openocean_test_messages PUBLIC openocean_messages)
+    set(converter
+      CONVERTER_TARGET openocean_test_messages_lcm_convert
+      HEADER openocean/test/lcm_convert.h
+      LINK_LIBRARIES openocean_test_messages)
+  endif()
   protobuf_generate_lcm(
     TARGET openocean_test_messages_lcm
     OUTPUT_DIR ${lcm_test_dir}
-    HEADER openocean/test/lcm_convert.h
     PROTOS mapping.proto
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src
-    LINK_LIBRARIES openocean_test_messages)
+    ${converter})
 
-  add_executable(check_lcm lcm/check_messages.cpp)
-  target_link_libraries(check_lcm PRIVATE openocean_messages_lcm openocean_test_messages_lcm)
-  add_test(NAME lcm_messages COMMAND check_lcm)
+  add_executable(check_lcm_types lcm/check_types.cpp)
+  target_link_libraries(check_lcm_types PRIVATE openocean_messages_lcm openocean_test_messages_lcm)
+  add_test(NAME lcm_types COMMAND check_lcm_types)
 
   set(expected ${CMAKE_CURRENT_SOURCE_DIR}/expected/lcm)
-  add_test(NAME lcm_expected COMMAND diff -r ${expected} ${lcm_test_dir}/protoc-gen-lcm)
-  list(APPEND update_expected
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${expected}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${lcm_test_dir}/protoc-gen-lcm ${expected})
-  list(APPEND update_expected_depends openocean_test_messages_lcm_generate)
+  if(OPENOCEAN_CPP)
+    add_executable(check_lcm_convert lcm/check_convert.cpp)
+    target_link_libraries(check_lcm_convert PRIVATE
+      openocean_messages_lcm_convert openocean_test_messages_lcm_convert)
+    add_test(NAME lcm_convert COMMAND check_lcm_convert)
+
+    add_test(NAME lcm_expected COMMAND diff -r ${expected} ${lcm_test_dir}/protoc-gen-lcm)
+    list(APPEND update_expected
+      COMMAND ${CMAKE_COMMAND} -E remove_directory ${expected}
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${lcm_test_dir}/protoc-gen-lcm ${expected})
+    list(APPEND update_expected_depends openocean_test_messages_lcm_generate)
+  else()
+    # Without the converter header (in expected/lcm/openocean), only the .lcm types to compare
+    add_test(NAME lcm_expected
+      COMMAND diff -r -x openocean ${expected} ${lcm_test_dir}/protoc-gen-lcm)
+  endif()
 endif()
 
 if(update_expected)

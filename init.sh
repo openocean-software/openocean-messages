@@ -10,7 +10,7 @@
 #             ROS_DISTRO defaults to jazzy on Ubuntu 24.04 and lyrical on 26.04
 #   --nanopb  nanopb C library
 #   --rust    Rust crate (prost), built with cargo
-#   --lcm     LCM types and C++ converters to and from Protobuf (implies --cxx)
+#   --lcm     LCM types (and with --cxx, C++ converters to and from Protobuf)
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -29,10 +29,7 @@ for arg in "$@"; do
         --ros) ros=ON ;;
         --nanopb) nanopb=ON ;;
         --rust) rust=ON ;;
-        --lcm)
-            lcm=ON
-            cxx=ON
-            ;;
+        --lcm) lcm=ON ;;
         -h | --help)
             sed -n '5,14s/^# \{0,1\}//p' "$0"
             exit 0
@@ -82,7 +79,7 @@ if [ "${rust}" = ON ]; then
     packages+=(cargo ca-certificates)
 fi
 if [ "${lcm}" = ON ]; then
-    packages+=(liblcm-dev)
+    packages+=(g++ liblcm-dev)
 fi
 
 SUDO=""

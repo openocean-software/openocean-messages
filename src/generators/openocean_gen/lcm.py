@@ -1,5 +1,5 @@
-"""Renders a Model as LCM types (*.lcm) and a C++ header that converts between them and
-the Protobuf C++ types."""
+"""Renders a Model as LCM types (*.lcm) and, optionally, a C++ header that converts between
+them and the Protobuf C++ types."""
 
 import keyword
 import re
@@ -88,7 +88,6 @@ class _Package:
             raise GeneratorError(f"expected one proto package, found {sorted(packages)}")
         self.package = packages.pop()
         self.namespace = _namespace(self.package)
-        self.header = params["header"]
         self.types = {t.full_name: t for t in model.messages + model.enums}
         self.includes = set()
 
@@ -416,9 +415,8 @@ template <typename Map> std::vector<const typename Map::value_type*> sorted(cons
 
 
 def generate(model, params):
-    """Returns {path: content}: one .lcm file per type, and the converter header."""
-    if "header" not in params:
-        raise GeneratorError("missing plugin parameter 'header'")
+    """Returns {path: content}: one .lcm file per type, and with the header parameter, the
+    converter header at that path."""
     package = _Package(model, params)
     files, bodies = {}, {}
     for m in model.messages:
@@ -433,7 +431,8 @@ def generate(model, params):
         files[f"{lcm_name(e.flat_name)}.lcm"] = package.render_enum(e)
     if not files:
         raise GeneratorError("no messages or enums to generate")
-    # Map entries convert inline, through the Protobuf Map API
-    converted = [m for m in model.messages if not m.map_entry]
-    files[package.header] = package.converter(converted, bodies)
+    if "header" in params:
+        # Map entries convert inline, through the Protobuf Map API
+        converted = [m for m in model.messages if not m.map_entry]
+        files[params["header"]] = package.converter(converted, bodies)
     return files

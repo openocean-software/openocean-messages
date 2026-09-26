@@ -47,7 +47,7 @@ ctest --test-dir build
 | `--ros` | `OPENOCEAN_ROS` | OFF | `build/ros/openocean_msgs` ROS 2 package source, to build with colcon |
 | `--nanopb` | `OPENOCEAN_NANOPB` | OFF | `openocean_messages_nanopb` C library (`#include "openocean/messages/navigation.pb.h"`, from `build/nanopb`) |
 | `--rust` | `OPENOCEAN_RUST` | OFF | `openocean-messages` crate in `rust/` (prost), built into `build/rust` |
-| `--lcm` | `OPENOCEAN_LCM` | OFF | `openocean_messages_lcm` LCM types and C++ converters (`#include "openocean/lcm_convert.h"`); needs `--cxx` |
+| `--lcm` | `OPENOCEAN_LCM` | OFF | `openocean_messages_lcm` LCM types (`#include "openocean/navigation_t.hpp"`); with `--cxx`, also `openocean_messages_lcm_convert` (`#include "openocean/lcm_convert.h"`) |
 
 `init.sh` with no options is `--cxx`. It writes `init.cmake`, which sets the option defaults for new build directories to the outputs it installed; `-D` still overrides them.
 
@@ -69,7 +69,7 @@ colcon build --base-paths build/ros
 
 ### Protobuf to LCM
 
-`protoc-gen-lcm` writes one `.lcm` type per message and enum (package `openocean`, e.g. `navigation_t`, `navigation_geodetic_t`), C++ types from `lcm-gen`, and `openocean/lcm_convert.h` with `to_lcm()` and `from_lcm()` overloads for each message.
+`protoc-gen-lcm` writes one `.lcm` type per message and enum (package `openocean`, e.g. `navigation_t`, `navigation_geodetic_t`), and `lcm-gen` their C++ types. With `OPENOCEAN_CPP`, it also writes `openocean/lcm_convert.h`, with `to_lcm()` and `from_lcm()` overloads for each message.
 
 | Protobuf | LCM |
 |---|---|
