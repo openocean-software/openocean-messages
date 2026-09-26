@@ -18,7 +18,7 @@ colcon --log-base "${work}/log" build \
 
 # shellcheck disable=SC1091
 source "${work}/install/setup.bash"
-for check in check_messages check_convert check_convert_mapping; do
+for check in check_messages check_convert; do
     "${work}/install/openocean_msgs_check/lib/openocean_msgs_check/${check}"
 done
 "${python}" "${here}/check_messages.py"

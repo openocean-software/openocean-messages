@@ -4,7 +4,7 @@ it and the ROS 2 C++ types that ros.py describes."""
 import re
 from xml.sax.saxutils import escape
 
-from .model import F, GeneratorError
+from .model import F, GeneratorError, dependency
 from .ros import _NUMERIC, _PACKAGE_NAME, _SCALARS, _smallest
 
 _WELL_KNOWN = {
@@ -49,17 +49,24 @@ class _Converter:
         if len(packages) != 1:
             raise GeneratorError(f"expected one proto package, found {sorted(packages)}")
         self.package = packages.pop()
-        self.namespace = "::" + self.package.replace(".", "::")
         self.types = {t.full_name: t for t in model.messages + model.enums}
-        self.proto_files = model.proto_files
+        self.imported = model.imported
+        self.deps = params["dep"]
+        # Protos another converter package provides are linked from it, not compiled again
+        provided = {f: dependency(f, self.deps) for f in model.proto_files
+                    if f not in model.generated_files}
+        self.proto_files = [f for f in model.proto_files if not provided.get(f)]
+        self.convert_deps = sorted({f"{package}_convert" for package in provided.values() if package})
         self.includes = set()
         self.ros_includes = set()
 
     def proto_cpp(self, t):
-        return f"{self.namespace}::{t.full_name[len(self.package) + 2:].replace('.', '_')}"
+        relative = t.full_name[len(t.package) + 2:] if t.package else t.full_name[1:]
+        return f"::{t.package.replace('.', '::')}::{relative.replace('.', '_')}"
 
     def ros_cpp(self, t):
-        return f"::{self.ros_package}::msg::{t.flat_name}"
+        package = self.ros_package if t.full_name in self.types else dependency(t.file, self.deps)
+        return f"::{package}::msg::{t.flat_name}"
 
     def kind(self, owner, f):
         name = f'"{owner}.{f.name}"'
@@ -84,10 +91,14 @@ class _Converter:
             self.ros_includes.add(f"builtin_interfaces/msg/{which}.hpp")
             return _Kind(lambda src, dst: f"{dst} = ros_detail::to_{which}({src}, {name});",
                          from_into=lambda src, ptr: f"ros_detail::from_{which}({src}, {ptr});")
-        t = self.types.get(f.type_name)
-        if t is None:
+        t = self.types.get(f.type_name) or self.imported.get(f.type_name)
+        if t is None or (f.type_name in self.imported and not dependency(t.file, self.deps)):
             raise GeneratorError(
-                f"{owner}.{f.name}: type {f.type_name[1:]} is not in the files being generated")
+                f"{owner}.{f.name}: type {f.type_name[1:]} is not in the files being generated, "
+                "or a dep=<proto path prefix>=<ROS package> parameter")
+        if f.type_name in self.imported:
+            # Its conversions (and ROS 2 type) come from the dependency's converter package
+            self.ros_includes.add(f"{dependency(t.file, self.deps)}_convert/convert.hpp")
         if f.type == F.TYPE_ENUM:
             value = _ROS_CPP_SCALARS[_smallest([v.number for v in t.values], "uint8", "int32")]
             enum = self.proto_cpp(t)
@@ -184,7 +195,7 @@ class _Converter:
         out.append("")
         out += [f'#include "{h}"' for h in ros_headers]
         detail = ""
-        if self.ros_includes:
+        if any(h.startswith("builtin_interfaces/") for h in self.ros_includes):
             detail += _DETAIL_SECONDS
         if "builtin_interfaces/msg/time.hpp" in self.ros_includes:
             detail += _DETAIL_TIME
@@ -209,8 +220,10 @@ class _Converter:
         return "\n".join(out)
 
     def package_xml(self):
-        p = {k: escape(v) for k, v in self.params.items()}
-        builtin = "  <depend>builtin_interfaces</depend>\n" if self.ros_includes else ""
+        p = {k: escape(v) for k, v in self.params.items() if isinstance(v, str)}
+        builtin = ("  <depend>builtin_interfaces</depend>\n"
+                   if any(h.startswith("builtin_interfaces/") for h in self.ros_includes) else "")
+        builtin += "".join(f"  <depend>{d}</depend>\n" for d in self.convert_deps)
         return f"""<?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
@@ -233,6 +246,10 @@ class _Converter:
 
     def cmake_lists(self):
         protos = "".join(f"    {f}\n" for f in self.proto_files)
+        finds = "".join(f"find_package({d} REQUIRED)\n" for d in self.convert_deps)
+        import_dirs = "".join(f" ${{{d}_PROTO_DIR}}" for d in self.convert_deps)
+        links = "".join(f" {d}::{d}" for d in self.convert_deps)
+        exports = "".join(f" {d}" for d in self.convert_deps)
         return f"""cmake_minimum_required(VERSION 3.10)
 project({self.name} VERSION {self.params.get("version", "0.0.0")} LANGUAGES CXX)
 
@@ -243,6 +260,9 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package({self.ros_package} REQUIRED)
 find_package(Protobuf REQUIRED)
+{finds}
+set(protos
+{protos})
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 add_library(${{PROJECT_NAME}})
@@ -251,25 +271,34 @@ set_target_properties(${{PROJECT_NAME}} PROPERTIES
 protobuf_generate(
   TARGET ${{PROJECT_NAME}}
   LANGUAGE cpp
-  PROTOS
-{protos}  IMPORT_DIRS ${{CMAKE_CURRENT_SOURCE_DIR}}
+  PROTOS ${{protos}}
+  IMPORT_DIRS ${{CMAKE_CURRENT_SOURCE_DIR}}{import_dirs}
   PROTOC_OUT_DIR ${{CMAKE_CURRENT_BINARY_DIR}})
 target_include_directories(${{PROJECT_NAME}} PUBLIC
   $<BUILD_INTERFACE:${{CMAKE_CURRENT_BINARY_DIR}}>
   $<BUILD_INTERFACE:${{CMAKE_CURRENT_SOURCE_DIR}}/include>
   $<INSTALL_INTERFACE:include/${{PROJECT_NAME}}>)
-target_link_libraries(${{PROJECT_NAME}} PUBLIC protobuf::libprotobuf ${{{self.ros_package}_TARGETS}})
+target_link_libraries(${{PROJECT_NAME}} PUBLIC
+  protobuf::libprotobuf ${{{self.ros_package}_TARGETS}}{links})
 
 install(DIRECTORY include/ DESTINATION include/${{PROJECT_NAME}})
 install(DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/ DESTINATION include/${{PROJECT_NAME}}
   FILES_MATCHING PATTERN "*.pb.h" PATTERN "CMakeFiles" EXCLUDE)
 install(TARGETS ${{PROJECT_NAME}} EXPORT export_${{PROJECT_NAME}}
   ARCHIVE DESTINATION lib LIBRARY DESTINATION lib)
+# So converter packages for protos that import these can build against them (<package>_PROTO_DIR)
+foreach(proto IN LISTS protos)
+  get_filename_component(directory ${{proto}} DIRECTORY)
+  install(FILES ${{proto}} DESTINATION share/${{PROJECT_NAME}}/proto/${{directory}})
+endforeach()
 
 ament_export_targets(export_${{PROJECT_NAME}} HAS_LIBRARY_TARGET)
-ament_export_dependencies({self.ros_package} Protobuf)
-ament_package()
+ament_export_dependencies({self.ros_package} Protobuf{exports})
+ament_package(CONFIG_EXTRAS cmake/${{PROJECT_NAME}}-extras.cmake)
 """
+
+    def cmake_extras(self):
+        return f'set({self.name}_PROTO_DIR "${{{self.name}_DIR}}/../proto")\n'
 
 
 # Helper sections of the ros_detail namespace, emitted only when used so that the header
@@ -400,4 +429,5 @@ def generate(model, params):
         f"include/{converter.name}/convert.hpp": converter.header(messages),
         "package.xml": converter.package_xml(),
         "CMakeLists.txt": converter.cmake_lists(),
+        f"cmake/{converter.name}-extras.cmake": converter.cmake_extras(),
     }

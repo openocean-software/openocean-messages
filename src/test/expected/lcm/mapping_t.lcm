@@ -39,4 +39,10 @@ struct mapping_t
     mapping_by_id_entry_t by_id[num_by_id];
     int64_t big;  // [1]
     int64_t small;  // [1]
+
+    // Types from another package (openocean), which the generated types and converters use
+    // rather than define again
+    boolean has_speed;
+    openocean.speed_t speed;
+    openocean.speed_mode_t mode;
 }

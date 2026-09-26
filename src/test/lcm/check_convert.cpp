@@ -128,6 +128,10 @@ openocean::test::Mapping full_mapping()
     (*m.mutable_by_id())[7].set_name("seven");
     m.set_big(uint64_t(1) << 62);
     m.set_small(std::numeric_limits<uint32_t>::max());
+    // Types from openocean, converted by openocean/lcm_convert.h's functions
+    m.mutable_speed()->set_value(1.5);
+    m.mutable_speed()->set_mode(openocean::SPEED_MODE_OVER_GROUND);
+    m.set_mode(openocean::SPEED_MODE_ESTIMATE);
     return m;
 }
 
@@ -142,6 +146,10 @@ void check_mapping()
     check(lcm.period == -1250000, "Duration as microseconds");
     check(lcm.num_table == 2 && lcm.table[0].key == "a" && lcm.table[1].key == "z",
           "map entries sorted by key");
+    check(lcm.has_speed && lcm.speed.value == 1.5 &&
+              lcm.speed.mode.value == openocean::speed_mode_t::OVER_GROUND,
+          "openocean.speed_t field");
+    check(lcm.mode.value == openocean::speed_mode_t::ESTIMATE, "openocean.speed_mode_t field");
 
     // An unset oneof round trips as unset
     openocean::test::Mapping unset;

@@ -30,3 +30,9 @@ MappingTableEntry[] table  # [1]
 MappingByIdEntry[] by_id
 uint64 big  # [1]
 uint32 small  # [1]
+
+# Types from another package (openocean), which the generated types and converters use
+# rather than define again
+bool has_speed
+openocean_msgs/Speed speed
+openocean_msgs/SpeedMode mode

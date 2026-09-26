@@ -4,7 +4,7 @@ them and the Protobuf C++ types."""
 import keyword
 import re
 
-from .model import CPP_KEYWORDS, F, GeneratorError, enum_value_names, upper_snake
+from .model import CPP_KEYWORDS, F, GeneratorError, dependency, enum_value_names, upper_snake
 
 # LCM has no unsigned types (other than byte), so these widen or range-check
 _SCALARS = {
@@ -89,14 +89,22 @@ class _Package:
         self.package = packages.pop()
         self.namespace = _namespace(self.package)
         self.types = {t.full_name: t for t in model.messages + model.enums}
+        self.imported = model.imported
+        self.deps = params["dep"]
         self.includes = set()
+        self.dep_headers = set()
 
     def proto_cpp(self, t):
-        relative = t.full_name[len(self.package) + 2:] if self.package else t.full_name[1:]
-        return f"{self.namespace}::{relative.replace('.', '_')}"
+        relative = t.full_name[len(t.package) + 2:] if t.package else t.full_name[1:]
+        return f"{_namespace(t.package)}::{relative.replace('.', '_')}"
 
     def lcm_cpp(self, t):
-        return f"{self.namespace}::{lcm_name(t.flat_name)}"
+        return f"{_namespace(t.package)}::{lcm_name(t.flat_name)}"
+
+    def lcm_type(self, t):
+        """How a field names type t: bare in this package, qualified from another."""
+        name = lcm_name(t.flat_name)
+        return name if t.package == self.package else f"{t.package}.{name}"
 
     def kind(self, owner, f):
         name = f'"{owner}.{f.name}"'
@@ -118,16 +126,20 @@ class _Package:
                          lambda src, dst: f"{dst} = lcm_detail::to_micros({src});",
                          from_into=lambda src, ptr: f"lcm_detail::{from_micros}({src}, {ptr});",
                          units=units, includes=(include,))
-        t = self.types.get(f.type_name)
-        if t is None:
+        t = self.types.get(f.type_name) or self.imported.get(f.type_name)
+        if t is None or (f.type_name in self.imported and not dependency(t.file, self.deps)):
             raise GeneratorError(
-                f"{owner}.{f.name}: type {f.type_name[1:]} is not in the files being generated")
+                f"{owner}.{f.name}: type {f.type_name[1:]} is not in the files being generated, "
+                "or a dep=<proto path prefix>=<converter header> parameter")
+        if f.type_name in self.imported:
+            # Its conversions come from the dependency's converter header
+            self.dep_headers.add(dependency(t.file, self.deps))
         if f.type == F.TYPE_ENUM:
             enum = self.proto_cpp(t)
-            return _Kind(lcm_name(t.flat_name),
+            return _Kind(self.lcm_type(t),
                          lambda src, dst: f"{dst}.value = static_cast<int32_t>({src});",
                          from_value=lambda src: f"static_cast<{enum}>({src}.value)")
-        return _Kind(lcm_name(t.flat_name),
+        return _Kind(self.lcm_type(t),
                      lambda src, dst: f"to_lcm({src}, &{dst});",
                      from_into=lambda src, ptr: f"from_lcm({src}, {ptr});")
 
@@ -321,6 +333,9 @@ class _Package:
         out += [f'#include "{h}"' for h in proto_headers]
         out.append("")
         out += [f'#include "{h}"' for h in sorted(lcm_headers)]
+        if self.dep_headers:
+            out.append("")
+            out += [f'#include "{h}"' for h in sorted(self.dep_headers)]
         out += ["", f"namespace {self.package.replace('.', '::')}", "{", _DETAIL, ""]
         signatures = []
         for m in messages:

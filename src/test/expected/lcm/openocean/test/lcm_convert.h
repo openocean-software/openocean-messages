@@ -17,6 +17,8 @@
 #include "openocean/test/mapping_inner_t.hpp"
 #include "openocean/test/mapping_t.hpp"
 
+#include "openocean/lcm_convert.h"
+
 namespace openocean::test
 {
 namespace lcm_detail
@@ -146,6 +148,9 @@ inline void to_lcm(const ::openocean::test::Mapping& in, ::openocean::test::mapp
     out->num_by_id = lcm_detail::to_count(out->by_id.size(), "openocean.test.Mapping.by_id");
     out->big = lcm_detail::to_int64(in.big(), "openocean.test.Mapping.big");
     out->small = in.small();
+    out->has_speed = in.has_speed();
+    to_lcm(in.speed(), &out->speed);
+    out->mode.value = static_cast<int32_t>(in.mode());
 }
 
 inline void from_lcm(const ::openocean::test::mapping_t& in, ::openocean::test::Mapping* out)
@@ -191,6 +196,9 @@ inline void from_lcm(const ::openocean::test::mapping_t& in, ::openocean::test::
         from_lcm(e.value, &(*out->mutable_by_id())[e.key]);
     out->set_big(lcm_detail::to_uint64(in.big, "openocean.test.Mapping.big"));
     out->set_small(lcm_detail::to_uint32(in.small, "openocean.test.Mapping.small"));
+    if (in.has_speed)
+        from_lcm(in.speed, out->mutable_speed());
+    out->set_mode(static_cast<::openocean::SpeedMode>(in.mode.value));
 }
 
 inline void to_lcm(const ::openocean::test::Mapping_Inner& in, ::openocean::test::mapping_inner_t* out)

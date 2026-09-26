@@ -3,15 +3,19 @@ set(PROTOC_GEN_LCM_GENERATE ${CMAKE_CURRENT_LIST_DIR}/GenerateLcm.cmake)
 file(GLOB PROTOC_GEN_LCM_SOURCES ${CMAKE_CURRENT_LIST_DIR}/openocean_gen/*.py)
 
 # protobuf_generate_lcm(TARGET <library> OUTPUT_DIR <dir> PROTOS <files>... IMPORT_DIRS <dirs>...
+#                       [DEPS <proto path prefix>=<converter header>...] [LINK_TYPES <libraries>...]
 #                       [CONVERTER_TARGET <library> HEADER <path> LINK_LIBRARIES <libraries>...])
 #
 # Generates LCM types from PROTOS into <OUTPUT_DIR>/protoc-gen-lcm, and their C++ types with lcm-gen
 # into <OUTPUT_DIR>/lcm-gen, as the interface library TARGET. With CONVERTER_TARGET, also generates
 # the converter header HEADER (e.g. openocean/lcm_convert.h) as that interface library, linked to
-# TARGET and LINK_LIBRARIES (the Protobuf C++ library).
+# TARGET and LINK_LIBRARIES (the Protobuf C++ library, and the converters of DEPS).
+#
+# Types from imported protos come from the LCM types libraries in LINK_TYPES, and their conversions
+# from the converter headers DEPS name.
 function(protobuf_generate_lcm)
   cmake_parse_arguments(arg "" "TARGET;OUTPUT_DIR;CONVERTER_TARGET;HEADER"
-                        "PROTOS;IMPORT_DIRS;LINK_LIBRARIES" ${ARGN})
+                        "PROTOS;IMPORT_DIRS;DEPS;LINK_TYPES;LINK_LIBRARIES" ${ARGN})
 
   set(types_dir ${arg_OUTPUT_DIR}/protoc-gen-lcm)
   set(cpp_dir ${arg_OUTPUT_DIR}/lcm-gen)
@@ -26,9 +30,17 @@ function(protobuf_generate_lcm)
     get_filename_component(proto ${proto} ABSOLUTE)
     list(APPEND protos ${proto})
   endforeach()
-  set(parameter)
+  set(parameters)
   if(arg_CONVERTER_TARGET)
-    set(parameter header=${arg_HEADER}:)
+    list(APPEND parameters header=${arg_HEADER})
+  endif()
+  foreach(dep IN LISTS arg_DEPS)
+    list(APPEND parameters dep=${dep})
+  endforeach()
+  set(parameter)
+  if(parameters)
+    string(REPLACE ";" "," parameter "${parameters}")
+    string(APPEND parameter ":")
   endif()
 
   # Removing the outputs first drops files for deleted messages
@@ -48,6 +60,7 @@ function(protobuf_generate_lcm)
   add_library(${arg_TARGET} INTERFACE)
   add_dependencies(${arg_TARGET} ${arg_TARGET}_generate)
   target_include_directories(${arg_TARGET} INTERFACE $<BUILD_INTERFACE:${cpp_dir}> ${LCM_INCLUDE_DIR})
+  target_link_libraries(${arg_TARGET} INTERFACE ${arg_LINK_TYPES})
 
   if(arg_CONVERTER_TARGET)
     add_library(${arg_CONVERTER_TARGET} INTERFACE)

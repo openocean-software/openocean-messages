@@ -11,13 +11,11 @@ add_executable(check_messages check_messages.cpp)
 target_link_libraries(check_messages
   ${openocean_msgs_TARGETS}
   ${openocean_test_msgs_TARGETS})
-# Separate executables: both converter packages compile options.proto into their shared
-# libraries, and Protobuf aborts when one process registers it twice
-add_executable(check_convert check_convert.cpp)
-target_link_libraries(check_convert openocean_msgs_convert::openocean_msgs_convert)
-add_executable(check_convert_mapping check_convert_mapping.cpp)
-target_link_libraries(check_convert_mapping openocean_test_msgs_convert::openocean_test_msgs_convert)
+add_executable(check_convert check_convert_main.cpp check_convert.cpp check_convert_mapping.cpp)
+target_link_libraries(check_convert
+  openocean_msgs_convert::openocean_msgs_convert
+  openocean_test_msgs_convert::openocean_test_msgs_convert)
 
-install(TARGETS check_messages check_convert check_convert_mapping DESTINATION lib/${PROJECT_NAME})
+install(TARGETS check_messages check_convert DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

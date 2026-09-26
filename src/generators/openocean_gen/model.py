@@ -114,6 +114,9 @@ class Model:
     all_types: dict
     # The request's proto files and their imports, except Protobuf's own
     proto_files: List[str]
+    # Types in imported (not generated) files, by fully qualified name
+    imported: dict
+    generated_files: List[str]
 
 
 def _comments(locations, path):
@@ -167,7 +170,8 @@ def _epoch_scale(units):
 
 
 def build(request):
-    """Builds the model for request.file_to_generate.
+    """Builds the model for request.file_to_generate, and Model.imported for the types in the
+    files they import.
 
     Files that only extend google.protobuf.*Options (e.g. options.proto) define
     metadata, not data, and are skipped.
@@ -189,15 +193,19 @@ def build(request):
         index(file.message_type, file.enum_type, prefix)
 
     messages, enums = [], []
+    imported_messages, imported_enums = [], []
     for file in request.proto_file:
-        if file.name not in to_generate or _is_options_file(file):
+        if file.name.startswith("google/protobuf/") or _is_options_file(file):
             continue
+        generated = file.name in to_generate
+        file_messages = messages if generated else imported_messages
+        file_enums = enums if generated else imported_enums
         locations = {tuple(loc.path): loc for loc in file.source_code_info.location}
         proto3 = file.syntax == "proto3"
         prefix = "." + file.package if file.package else ""
 
         def add_enum(e, scope, flat_scope, path):
-            enums.append(Enum(
+            file_enums.append(Enum(
                 full_name=f"{scope}.{e.name}",
                 flat_name=flat_scope + e.name,
                 proto_name=e.name,
@@ -236,7 +244,7 @@ def build(request):
             oneofs = [Oneof(m.oneof_decl[i].name, members,
                             _comments(locations, path + [_MESSAGE_ONEOF, i]))
                       for i, members in sorted(real_oneofs.items())]
-            messages.append(Message(full_name, flat_name, file.name, file.package,
+            file_messages.append(Message(full_name, flat_name, file.name, file.package,
                                     m.options.map_entry, fields, oneofs,
                                     _comments(locations, path)))
             for j, nested in enumerate(m.nested_type):
@@ -258,7 +266,22 @@ def build(request):
 
     proto_files = [f.name for f in request.proto_file
                    if not f.name.startswith("google/protobuf/")]
-    return Model(messages, enums, all_types, proto_files)
+    imported = {t.full_name: t for t in imported_messages + imported_enums}
+    return Model(messages, enums, all_types, proto_files, imported,
+                 list(request.file_to_generate))
+
+
+def dependency(file, deps):
+    """The package that provides proto file, from deps' "<path prefix>=<package>" entries (the
+    longest matching prefix), or None."""
+    matches = []
+    for dep in deps:
+        prefix, sep, package = dep.partition("=")
+        if not sep or not package:
+            raise GeneratorError(f"dep '{dep}' is not <proto path prefix>=<package>")
+        if file.startswith(prefix):
+            matches.append((len(prefix), package))
+    return max(matches)[1] if matches else None
 
 
 def enum_value_names(e, valid):
@@ -277,12 +300,16 @@ def upper_snake(camel):
 
 
 def parse_parameters(parameter):
-    params = {}
+    """Parses "key=value,..." into a dict; dep may be repeated, so is always a list."""
+    params = {"dep": []}
     for item in filter(None, parameter.split(",")):
         key, sep, value = item.partition("=")
         if not sep:
             raise GeneratorError(f"parameter '{item}' is not key=value")
-        params[key.strip()] = value.strip()
+        if key.strip() == "dep":
+            params["dep"].append(value.strip())
+        else:
+            params[key.strip()] = value.strip()
     return params
 
 

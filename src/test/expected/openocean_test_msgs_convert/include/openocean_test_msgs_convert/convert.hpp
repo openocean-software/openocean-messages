@@ -17,6 +17,7 @@
 
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
+#include "openocean_msgs_convert/convert.hpp"
 #include "openocean_test_msgs/msg/mapping.hpp"
 #include "openocean_test_msgs/msg/mapping_inner.hpp"
 
@@ -182,6 +183,9 @@ inline void to_ros(const ::openocean::test::Mapping& in, ::openocean_test_msgs::
     }
     out->big = in.big();
     out->small = in.small();
+    out->has_speed = in.has_speed();
+    to_ros(in.speed(), &out->speed);
+    out->mode.value = static_cast<uint8_t>(in.mode());
 }
 
 inline void from_ros(const ::openocean_test_msgs::msg::Mapping& in, ::openocean::test::Mapping* out)
@@ -222,6 +226,9 @@ inline void from_ros(const ::openocean_test_msgs::msg::Mapping& in, ::openocean:
         from_ros(e.value, &(*out->mutable_by_id())[e.key]);
     out->set_big(in.big);
     out->set_small(in.small);
+    if (in.has_speed)
+        from_ros(in.speed, out->mutable_speed());
+    out->set_mode(static_cast<::openocean::SpeedMode>(in.mode.value));
 }
 
 inline void to_ros(const ::openocean::test::Mapping_Inner& in, ::openocean_test_msgs::msg::MappingInner* out)

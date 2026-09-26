@@ -80,7 +80,7 @@ CI checks each pull request against its base branch, and the scripts run locally
 
 ### Protobuf to LCM
 
-`protoc-gen-lcm` writes one `.lcm` type per message and enum (package `openocean`, e.g. `navigation_t`, `navigation_geodetic_t`), and `lcm-gen` their C++ types. With `OPENOCEAN_CPP`, it also writes `openocean/lcm_convert.h`, with `to_lcm()` and `from_lcm()` overloads for each message.
+`protoc-gen-lcm` writes one `.lcm` type per message and enum (package `openocean`, e.g. `navigation_t`, `navigation_geodetic_t`), and `lcm-gen` their C++ types. With `OPENOCEAN_CPP`, it also writes `openocean/lcm_convert.h`, with `to_lcm()` and `from_lcm()` overloads for each message. Types from another package's protos are named by package (`openocean.navigation_t`), and `dep=<proto path prefix>=<converter header>` (`DEPS` in `protobuf_generate_lcm()`) gives the header with their conversions.
 
 | Protobuf | LCM |
 |---|---|
@@ -96,6 +96,8 @@ CI checks each pull request against its base branch, and the scripts run locally
 ### Protobuf to ROS 2
 
 `protoc-gen-ros` writes two packages: `openocean_msgs`, with the messages, and `openocean_msgs_convert`, which builds the Protobuf C++ library and provides `to_ros()` and `from_ros()` overloads for each message (`#include <openocean_msgs_convert/convert.hpp>`, target `openocean_msgs_convert::openocean_msgs_convert`).
+
+Protos that use another package's protos (e.g. a vendor message with an `openocean.Navigation` field) name that package with `dep=<proto path prefix>=<ROS package>` (`DEPS` in `protobuf_generate_ros()`), e.g. `dep=openocean/messages/=openocean_msgs`. Their fields become `openocean_msgs/Navigation`, and their converter package links `openocean_msgs_convert` (which installs its protos for this) rather than compiling openocean's protos again, which Protobuf would reject in one process.
 
 | Protobuf | ROS 2 |
 |---|---|

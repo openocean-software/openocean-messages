@@ -1,6 +1,7 @@
 // Checks the openocean Protobuf <-> openocean_msgs converters: Navigation and ControlSetpoint
 // round trip, int64 microseconds become builtin_interfaces/Time, presence becomes has_ flags,
 // and a time past builtin_interfaces' int32 seconds (2038) throws rather than wraps.
+// check_convert_main.cpp runs it.
 
 #include <cstdint>
 #include <stdexcept>
@@ -9,7 +10,7 @@
 
 #include "check_util.hpp"
 
-int main()
+void check_openocean_convert()
 {
     openocean::Navigation nav;
     nav.set_time(1500000);
@@ -48,6 +49,4 @@ int main()
     openocean_msgs::msg::Navigation late_ros;
     check::expect_throws<std::out_of_range>([&] { to_ros(late, &late_ros); },
                                             "time past builtin_interfaces' int32 seconds");
-
-    return check::finish("ROS 2 converters");
 }

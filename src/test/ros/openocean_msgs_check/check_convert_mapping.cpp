@@ -1,7 +1,8 @@
 // Checks the converters for the test Mapping message, which covers each mapping rule the
 // openocean messages don't: bytes, enums (including negative values), a oneof, maps (sorted by
 // key on the ROS side), Timestamp and Duration (builtin_interfaces keeps nanosec non-negative),
-// milliseconds since 1970 as Time, and uint64 (which ROS 2 holds as is).
+// milliseconds since 1970 as Time, uint64 (which ROS 2 holds as is), and fields whose types come
+// from openocean (converted by openocean_msgs_convert's functions). check_convert_main.cpp runs it.
 
 #include <cstdint>
 #include <limits>
@@ -11,7 +12,7 @@
 
 #include "check_util.hpp"
 
-int main()
+void check_mapping_convert()
 {
     openocean::test::Mapping m;
     m.set_implicit_presence(1.5);
@@ -34,6 +35,9 @@ int main()
     (*m.mutable_by_id())[7].set_name("seven");
     m.set_big(std::numeric_limits<uint64_t>::max());
     m.set_small(std::numeric_limits<uint32_t>::max());
+    m.mutable_speed()->set_value(1.5);
+    m.mutable_speed()->set_mode(openocean::SPEED_MODE_OVER_GROUND);
+    m.set_mode(openocean::SPEED_MODE_ESTIMATE);
 
     auto ros = check::round_trip<openocean_test_msgs::msg::Mapping>(m, "Mapping");
     check::expect(ros.choice_case == openocean_test_msgs::msg::Mapping::CHOICE_B, "oneof case");
@@ -46,9 +50,12 @@ int main()
                   "negative Duration with non-negative nanosec");
     check::expect(ros.table.size() == 2 && ros.table[0].key == "a" && ros.table[1].key == "z",
                   "map entries sorted by key");
+    check::expect(ros.has_speed && ros.speed.value == 1.5 &&
+                      ros.speed.mode.value == openocean_msgs::msg::SpeedMode::OVER_GROUND,
+                  "openocean_msgs/Speed field");
+    check::expect(ros.mode.value == openocean_msgs::msg::SpeedMode::ESTIMATE,
+                  "openocean_msgs/SpeedMode field");
 
     openocean::test::Mapping empty;
     check::round_trip<openocean_test_msgs::msg::Mapping>(empty, "empty Mapping");
-
-    return check::finish("ROS 2 converters for Mapping");
 }

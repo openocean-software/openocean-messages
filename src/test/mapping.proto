@@ -4,6 +4,7 @@ package openocean.test;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
+import "openocean/messages/common.proto";
 import "openocean/messages/options.proto";
 
 // Covers each mapping rule (ROS 2, LCM) that openocean's own messages don't
@@ -53,4 +54,9 @@ message Mapping
 
     uint64 big = 16 [(openocean.field).units = "1"];
     fixed32 small = 17 [(openocean.field).units = "1"];
+
+    // Types from another package (openocean), which the generated types and converters use
+    // rather than define again
+    openocean.Speed speed = 18;
+    openocean.SpeedMode mode = 19;
 }

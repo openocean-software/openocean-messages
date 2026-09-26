@@ -46,8 +46,8 @@ if(OPENOCEAN_ROS)
     PROTOS mapping.proto
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src
     OPTIONS ${OPENOCEAN_ROS_OPTIONS}
-    CONVERT_PACKAGE openocean_test_msgs_convert
-    CONVERT_PROTOS mapping.proto ${PROJECT_SOURCE_DIR}/src/openocean/messages/options.proto)
+    DEPS openocean/messages/=${OPENOCEAN_ROS_PACKAGE}
+    CONVERT_PACKAGE openocean_test_msgs_convert)
 
   set(expected ${CMAKE_CURRENT_SOURCE_DIR}/expected/openocean_test_msgs)
   set(expected_convert ${CMAKE_CURRENT_SOURCE_DIR}/expected/openocean_test_msgs_convert)
@@ -56,6 +56,7 @@ if(OPENOCEAN_ROS)
   add_test(NAME ros_expected COMMAND sh -c
     "diff -r ${expected} ${ros_test_dir}/openocean_test_msgs && \
      diff -r ${expected_convert}/include ${convert}/include && \
+     diff -r ${expected_convert}/cmake ${convert}/cmake && \
      diff ${expected_convert}/package.xml ${convert}/package.xml && \
      diff ${expected_convert}/CMakeLists.txt ${convert}/CMakeLists.txt")
   list(APPEND update_expected
@@ -63,6 +64,7 @@ if(OPENOCEAN_ROS)
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${ros_test_dir}/openocean_test_msgs ${expected}
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${expected_convert}
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${convert}/include ${expected_convert}/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${convert}/cmake ${expected_convert}/cmake
     COMMAND ${CMAKE_COMMAND} -E copy ${convert}/package.xml ${convert}/CMakeLists.txt ${expected_convert})
   list(APPEND update_expected_depends openocean_test_msgs_ros)
 
@@ -93,13 +95,15 @@ if(OPENOCEAN_LCM)
     set(converter
       CONVERTER_TARGET openocean_test_messages_lcm_convert
       HEADER openocean/test/lcm_convert.h
-      LINK_LIBRARIES openocean_test_messages)
+      LINK_LIBRARIES openocean_test_messages openocean_messages_lcm_convert)
   endif()
   protobuf_generate_lcm(
     TARGET openocean_test_messages_lcm
     OUTPUT_DIR ${lcm_test_dir}
     PROTOS mapping.proto
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src
+    DEPS openocean/messages/=openocean/lcm_convert.h
+    LINK_TYPES openocean_messages_lcm
     ${converter})
 
   add_executable(check_lcm_types lcm/check_types.cpp)

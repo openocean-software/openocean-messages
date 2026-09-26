@@ -4,7 +4,7 @@ import keyword
 import re
 from xml.sax.saxutils import escape
 
-from .model import CPP_KEYWORDS, F, GeneratorError, enum_value_names
+from .model import CPP_KEYWORDS, F, GeneratorError, dependency, enum_value_names
 
 _SCALARS = {
     F.TYPE_DOUBLE: "float64",
@@ -66,6 +66,8 @@ class _Package:
             raise GeneratorError(f"'{self.name}' is not a valid ROS 2 package name")
         self.params = params
         self.local = {t.full_name: t.flat_name for t in model.messages + model.enums}
+        self.imported = model.imported
+        self.deps = params["dep"]
         self.dependencies = set()
 
     def type_of(self, owner, f):
@@ -79,6 +81,14 @@ class _Package:
             return "uint8[]"
         elif f.type_name in self.local:
             base = self.local[f.type_name]
+        elif f.type_name in self.imported:
+            t = self.imported[f.type_name]
+            package = dependency(t.file, self.deps)
+            if package is None:
+                raise GeneratorError(
+                    f"{owner}.{f.name}: type {f.type_name[1:]} is from {t.file}, which no "
+                    "dep=<proto path prefix>=<ROS package> parameter covers")
+            base = f"{package}/{t.flat_name}"
         elif f.type_name in _WELL_KNOWN:
             base = _WELL_KNOWN[f.type_name]
         else:
@@ -163,7 +173,7 @@ class _Package:
         return "\n".join(out) + "\n"
 
     def package_xml(self):
-        p = {k: escape(v) for k, v in self.params.items()}
+        p = {k: escape(v) for k, v in self.params.items() if isinstance(v, str)}
         depends = "".join(f"  <depend>{d}</depend>\n" for d in sorted(self.dependencies))
         if depends:
             depends += "\n"

@@ -3,19 +3,25 @@ file(GLOB PROTOC_GEN_ROS_SOURCES ${CMAKE_CURRENT_LIST_DIR}/openocean_gen/*.py)
 
 # protobuf_generate_ros(TARGET <target> PACKAGE <ros_package> OUTPUT_DIR <dir>
 #                       PROTOS <files>... IMPORT_DIRS <dirs>... [OPTIONS <key=value>...]
+#                       [DEPS <proto path prefix>=<ros_package>...]
 #                       [CONVERT_PACKAGE <ros_package> [CONVERT_PROTOS <files>...]])
 #
 # Generates the ROS 2 interface package <OUTPUT_DIR>/<PACKAGE> from PROTOS (relative to
 # CMAKE_CURRENT_SOURCE_DIR). With CONVERT_PACKAGE, also generates <OUTPUT_DIR>/<CONVERT_PACKAGE>,
 # which builds the Protobuf C++ library from CONVERT_PROTOS (default PROTOS; they must include
-# every non-Protobuf import) and converts to and from PACKAGE. OPTIONS are passed to protoc-gen-ros.
+# every import that DEPS doesn't cover) and converts to and from PACKAGE. DEPS name the packages
+# (and their <ros_package>_convert) that provide imported protos. OPTIONS are passed to
+# protoc-gen-ros.
 function(protobuf_generate_ros)
   cmake_parse_arguments(arg "" "TARGET;PACKAGE;OUTPUT_DIR;CONVERT_PACKAGE"
-                        "PROTOS;IMPORT_DIRS;OPTIONS;CONVERT_PROTOS" ${ARGN})
+                        "PROTOS;IMPORT_DIRS;OPTIONS;DEPS;CONVERT_PROTOS" ${ARGN})
 
   set(parameter "package=${arg_PACKAGE}")
   foreach(option IN LISTS arg_OPTIONS)
     string(APPEND parameter ",${option}")
+  endforeach()
+  foreach(dep IN LISTS arg_DEPS)
+    string(APPEND parameter ",dep=${dep}")
   endforeach()
   set(include_args)
   set(import_dirs)
