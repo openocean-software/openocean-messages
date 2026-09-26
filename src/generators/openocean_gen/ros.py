@@ -209,7 +209,7 @@ class _Package:
         files = "".join(f'  "{f}"\n' for f in msg_files)
         deps = (f"  DEPENDENCIES {' '.join(sorted(self.dependencies))}\n"
                 if self.dependencies else "")
-        return f"""cmake_minimum_required(VERSION 3.8)
+        return f"""cmake_minimum_required(VERSION 3.10)
 project({self.name})
 
 find_package(ament_cmake REQUIRED)

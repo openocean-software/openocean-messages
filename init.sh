@@ -58,6 +58,7 @@ if [ "${ros}" = ON ]; then
     fi
     packages+=(
         g++
+        make
         "ros-${ROS_DISTRO}-ament-cmake"
         "ros-${ROS_DISTRO}-rosidl-default-generators"
         "ros-${ROS_DISTRO}-rosidl-default-runtime"
