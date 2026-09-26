@@ -6,9 +6,14 @@ if(((NOT DEFINED CMAKE_CXX_STANDARD) OR ("${CMAKE_CXX_STANDARD}" STREQUAL "03") 
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
+option(OPENOCEAN_CPP "Build the C++ Protobuf library" ON)
+option(OPENOCEAN_PYTHON "Generate the Python Protobuf modules" OFF)
+option(OPENOCEAN_ROS "Generate the ROS 2 message package" OFF)
+
 find_package(Protobuf REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(UDUNITS REQUIRED IMPORTED_TARGET udunits)
+if(OPENOCEAN_PYTHON OR OPENOCEAN_ROS)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+endif()
 
 include(CTest)
 

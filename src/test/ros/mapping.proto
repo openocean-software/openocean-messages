@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package openocean.test;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "openocean/messages/options.proto";
+
+// Covers each protoc-gen-ros mapping rule that openocean's own messages don't
+message Mapping
+{
+    // Values share the COLOR_ prefix, so it is stripped
+    enum Color
+    {
+        COLOR_RED = 0;
+        COLOR_GREEN = 1;  // trailing value comment
+    }
+
+    // No common prefix, and a negative value, so kept as is in int32
+    enum Signed
+    {
+        ZERO = 0;
+        NEGATIVE = -1;
+    }
+
+    message Inner
+    {
+        string name = 1;
+    }
+
+    double implicit_presence = 1 [(openocean.field).units = "m"];
+    optional float explicit_presence = 2 [(openocean.field).units = "s"];
+    repeated sint32 counts = 3 [(openocean.field).units = "1"];
+    bytes data = 4;
+    Color color = 5;
+    optional Signed sign = 6;
+    int64 stamp_ms = 7 [(openocean.field).units =
+                            "milliseconds since 1970-01-01 00:00:00 UTC"];
+    google.protobuf.Timestamp stamp = 8;
+    google.protobuf.Duration period = 9;
+    Inner inner = 10;
+    repeated Inner inners = 11;
+
+    // one of a or b
+    oneof choice
+    {
+        double a = 12 [(openocean.field).units = "m"];
+        Inner b = 13;
+    }
+
+    map<string, double> table = 14 [(openocean.field).units = "1"];
+}
