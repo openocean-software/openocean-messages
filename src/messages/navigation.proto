@@ -30,6 +30,7 @@ message Navigation
             [(openocean.field).units = "degrees_east"];
         optional double depth = 3 [(openocean.field).units = "m"];
     }
+    optional Geodetic global = 10;
 
     message ENU
     {
@@ -41,9 +42,9 @@ message Navigation
         optional double n = 4 [(openocean.field).units = "m"];
         optional double u = 5 [(openocean.field).units = "m"];
     }
-
-    optional Geodetic global = 10;
     optional ENU local = 11;
+
+    // defined in common.proto
     optional Euler attitude = 12;
 
     message Velocity
@@ -51,10 +52,13 @@ message Navigation
         optional double u = 1 [(openocean.field).units = "m/s"];
         optional double v = 2 [(openocean.field).units = "m/s"];
         optional double w = 3 [(openocean.field).units = "m/s"];
+        // defined in common.proto
         optional SpeedMode mode = 4;
     }
 
+    // repeated so that speed over water and/or speed over ground can be reported
     repeated Speed speed = 13;
+    // ditto for dx/dt, etc. velocities
     repeated Velocity velocity = 14;
 
     optional double altitude = 15 [(openocean.field).units = "m"];
