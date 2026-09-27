@@ -11,10 +11,12 @@ nav:
   - Building: building.md
   - Using from another project: using.md
   - Outputs:
-      - ROS 2: ros.md
-      - LCM: lcm.md
+      - C++: cxx.md
+      - Python: python.md
       - nanopb: nanopb.md
       - Rust: rust.md
+      - ROS 2: ros.md
+      - LCM: lcm.md
   - Compatibility checks: compatibility.md
   - Development: development.md
 

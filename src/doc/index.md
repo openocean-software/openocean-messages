@@ -60,7 +60,7 @@ flowchart TB
 - [Messages](messages.md): the message definitions, their conventions, and how to extend them
 - [Building](building.md): dependencies, outputs, and build options
 - [Using from another project](using.md): installing, and `find_package(openocean_messages)`
-- Outputs: [ROS 2](ros.md), [LCM](lcm.md), [nanopb](nanopb.md), [Rust](rust.md)
+- Outputs: [C++](cxx.md), [Python](python.md), [nanopb](nanopb.md), [Rust](rust.md), [ROS 2](ros.md), [LCM](lcm.md)
 - [Compatibility checks](compatibility.md): ABI and Protobuf checks on pull requests
 - [Development](development.md): repository layout, tests, and pinned versions
 
