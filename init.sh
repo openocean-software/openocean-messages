@@ -7,13 +7,15 @@
 #   --python  Python Protobuf modules
 #   --ros     ROS 2 message package, built with colcon. Needs the ROS 2 apt repository:
 #             https://docs.ros.org/en/rolling/Installation/Ubuntu-Install-Debs.html
-#             ROS_DISTRO defaults to jazzy on Ubuntu 24.04 and lyrical on 26.04
+#             ROS_DISTRO defaults to the distribution versions.env gives this Ubuntu release
 #   --nanopb  nanopb C library
 #   --rust    Rust crate (prost), built with cargo
 #   --lcm     LCM types (and with --cxx, C++ converters to and from Protobuf)
 set -euo pipefail
 
 cd "$(dirname "$0")"
+# shellcheck source=versions.env
+. ./versions.env
 
 cxx=OFF
 python=OFF
@@ -51,14 +53,13 @@ if [ "${python}" = ON ] || [ "${ros}" = ON ] || [ "${lcm}" = ON ]; then
 fi
 if [ "${ros}" = ON ]; then
     if [ -z "${ROS_DISTRO:-}" ]; then
-        case "$(. /etc/os-release && echo "${VERSION_CODENAME}")" in
-            noble) ROS_DISTRO=jazzy ;;
-            resolute) ROS_DISTRO=lyrical ;;
-            *)
-                echo "Set ROS_DISTRO for this Ubuntu release" >&2
-                exit 1
-                ;;
-        esac
+        codename=$(. /etc/os-release && echo "${VERSION_CODENAME}")
+        distro_var="ROS_DISTRO_${codename^^}"
+        ROS_DISTRO=${!distro_var:-}
+        if [ -z "${ROS_DISTRO}" ]; then
+            echo "Set ROS_DISTRO, or add ${distro_var} to versions.env" >&2
+            exit 1
+        fi
     fi
     packages+=(
         g++

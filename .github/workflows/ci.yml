@@ -26,8 +26,6 @@ jobs:
       - uses: actions/checkout@v5
       - name: Add the ROS 2 apt repository
         run: .github/ci/add-ros-apt-source.sh
-        env:
-          GH_TOKEN: ${{ github.token }}
       - name: Install dependencies
         run: ./init.sh --cxx --python --ros --nanopb --rust --lcm
       - name: Build
@@ -57,8 +55,6 @@ jobs:
       - name: Add the ROS 2 apt repository
         if: matrix.output == 'ros'
         run: .github/ci/add-ros-apt-source.sh
-        env:
-          GH_TOKEN: ${{ github.token }}
       - name: Install dependencies
         run: ./init.sh --${{ matrix.output }}
       - name: Build
@@ -96,18 +92,27 @@ jobs:
     name: Protobuf compatibility (buf breaking)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    env:
-      BUF_VERSION: 1.73.0
-      BUF_SHA256: 8f2986298ad08f0cc1bf999b9797b7c383adf32d7edf0f73d6f1e1a701baeac1
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Install buf
         run: |
+          . ./versions.env
           curl -fsSL -o "${RUNNER_TEMP}/buf" \
             "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64"
           echo "${BUF_SHA256}  ${RUNNER_TEMP}/buf" | sha256sum -c
           chmod +x "${RUNNER_TEMP}/buf"
       - name: Compare the protos with the base branch
         run: BUF="${RUNNER_TEMP}/buf" .github/ci/check-buf.sh "origin/${{ github.base_ref }}"
+
+  docs:
+    name: Documentation (mkdocs)
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install mkdocs
+        run: apt-get update && apt-get install -y --no-install-recommends mkdocs mkdocs-material
+      - name: Build
+        run: mkdocs build --strict

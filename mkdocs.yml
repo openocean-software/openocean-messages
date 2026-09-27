@@ -1,0 +1,19 @@
+site_name: openocean-messages
+repo_url: https://github.com/openocean-software/openocean-messages
+docs_dir: src/doc
+
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Messages: messages.md
+  - Building: building.md
+  - Using from another project: using.md
+  - Outputs:
+      - ROS 2: ros.md
+      - LCM: lcm.md
+      - nanopb: nanopb.md
+      - Rust: rust.md
+  - Compatibility checks: compatibility.md
+  - Development: development.md
