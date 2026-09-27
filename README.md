@@ -27,7 +27,7 @@ This project is an initiative of Open Ocean Software: https://oceansoft.org.
 - src: Source code
   - openocean/messages: Message definitions (Protobuf, imported as `openocean/messages/*.proto`)
     - options.proto: Field options (units)
-    - common.proto: Types shared between messages (Speed, Euler)
+    - common.proto: Types shared between messages (Speed, Euler, CustomValue)
     - navigation.proto: Navigation (vehicle state)
     - control.proto: ControlSetpoint (heading, speed, depth, etc.)
     - nanopb.options: nanopb size limits
@@ -49,6 +49,31 @@ This project is an initiative of Open Ocean Software: https://oceansoft.org.
 - Body-frame velocities are forward, starboard, down (Fossen / SNAME)
 - Heading and course are clockwise from true north.
 - Optional fields indicate no data (Navigation) or not controlled (ControlSetpoint).
+
+## Extending the messages
+
+*This section was written by Claude.*
+
+Projects that need more than openocean's fields should wrap the openocean message in their own (composition):
+
+```protobuf
+import "openocean/messages/navigation.proto";
+
+message ContactReport
+{
+    openocean.Navigation nav = 1;
+    string type = 2;
+    optional double length = 3;
+}
+```
+
+Composition works with every output: the ROS 2 and LCM generators refer to openocean's types with `dep=` (see [Using from another project](#using-from-another-project)), so the wrapper is a native, typed message there too. It is a different message from `openocean.Navigation`, though, so subscribers to that type don't see it.
+
+For a few loosely typed values (e.g. one more sensor reading), `Navigation.custom` and `ControlSetpoint.custom` hold a list of `CustomValue` (name, value, and UDUNITS-2 units) instead.
+
+Field numbers 1000 and up are reserved in `Navigation`, for messages that repeat its fields and add their own, so Protobuf readers of `Navigation` can still read them.
+
+Fields several projects need belong in openocean itself.
 
 ## Building
 
@@ -150,7 +175,7 @@ CI checks each pull request against its base branch, and the scripts run locally
 
 *This section was written by Claude.*
 
-`src/openocean/messages/nanopb.options` limits each repeated and string field (e.g. at most 2 `Navigation.speed` entries, 32-character strings), so every field is a fixed-size struct member rather than a callback. Messages that exceed a limit fail to encode or decode with nanopb.
+`src/openocean/messages/nanopb.options` limits each repeated and string field (e.g. at most 2 `Navigation.speed` and 8 `custom` entries, 32-character strings), so every field is a fixed-size struct member rather than a callback. Messages that exceed a limit fail to encode or decode with nanopb.
 
 ### Rust
 

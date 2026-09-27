@@ -24,3 +24,12 @@ message Euler
     // clockwise from true north
     optional double heading = 3 [(openocean.field).units = "rad"];
 }
+
+// A quantity the messages don't define, e.g. a vendor sensor reading or an actuator setpoint
+message CustomValue
+{
+    string name = 1;
+    double value = 2 [(openocean.field).units_field = "units"];
+    // UDUNITS-2
+    string units = 3;
+}

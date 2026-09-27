@@ -35,8 +35,8 @@ int main()
     check(nav.speed.at(0).mode.value == 1, "SpeedMode::OVER_GROUND == 1");
 
     openocean_msgs::msg::ControlSetpoint setpoint;
-    openocean_msgs::msg::ControlSetpointCustomSetpoint custom;
-    custom.domain = "thruster";
+    openocean_msgs::msg::CustomValue custom;
+    custom.name = "thruster";
     custom.value = 50;
     custom.units = "percent";
     setpoint.custom.push_back(custom);

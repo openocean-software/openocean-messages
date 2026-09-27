@@ -22,6 +22,10 @@ void check_openocean_convert()
     speed->set_value(1.5);
     speed->set_mode(openocean::SPEED_MODE_OVER_GROUND);
     nav.set_altitude(20.0);
+    auto* temperature = nav.add_custom();
+    temperature->set_name("water_temperature");
+    temperature->set_value(12.5);
+    temperature->set_units("degC");
 
     auto ros = check::round_trip<openocean_msgs::msg::Navigation>(nav, "Navigation");
     check::expect(ros.time.sec == 1 && ros.time.nanosec == 500000000, "time as builtin_interfaces/Time");
@@ -36,7 +40,7 @@ void check_openocean_convert()
     setpoint.set_time(-1500000);
     setpoint.set_depth(5.0);
     auto* custom = setpoint.add_custom();
-    custom->set_domain("thruster");
+    custom->set_name("thruster");
     custom->set_value(50);
     custom->set_units("percent");
     auto ros_setpoint =

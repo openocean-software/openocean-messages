@@ -40,6 +40,10 @@ int main(int argc, char** argv)
     nav.speed[0].mode = openocean_SpeedMode_SPEED_MODE_OVER_GROUND;
     nav.has_vehicle = true;
     strcpy(nav.vehicle.name, "auv1");
+    nav.custom_count = 1;
+    strcpy(nav.custom[0].name, "water_temperature");
+    nav.custom[0].value = 12.5;
+    strcpy(nav.custom[0].units, "degC");
 
     uint8_t nav_buf[openocean_Navigation_size];
     pb_ostream_t out = pb_ostream_from_buffer(nav_buf, sizeof nav_buf);
@@ -54,12 +58,15 @@ int main(int argc, char** argv)
     check(!nav_back.has_enu, "unset enu stays unset");
     check(nav_back.speed_count == 1 && nav_back.speed[0].value == 1.5, "speed");
     check(strcmp(nav_back.vehicle.name, "auv1") == 0, "vehicle.name");
+    check(nav_back.custom_count == 1 && nav_back.custom[0].value == 12.5 &&
+              strcmp(nav_back.custom[0].units, "degC") == 0,
+          "custom");
 
     openocean_ControlSetpoint setpoint = openocean_ControlSetpoint_init_zero;
     setpoint.has_depth = true;
     setpoint.depth = 5.0;
     setpoint.custom_count = 1;
-    strcpy(setpoint.custom[0].domain, "thruster");
+    strcpy(setpoint.custom[0].name, "thruster");
     setpoint.custom[0].value = 50;
     strcpy(setpoint.custom[0].units, "percent");
 

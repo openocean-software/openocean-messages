@@ -79,6 +79,10 @@ void check_navigation()
     speed->set_mode(openocean::SPEED_MODE_OVER_GROUND);
     nav.add_speed()->set_value(1.4);
     nav.set_altitude(20.0);
+    auto* custom = nav.add_custom();
+    custom->set_name("water_temperature");
+    custom->set_value(12.5);
+    custom->set_units("degC");
 
     auto lcm = check_round_trip<openocean::Navigation, openocean::navigation_t>(nav, "Navigation");
     check(lcm.has_geodetic && lcm.geodetic.has_depth && !lcm.geodetic.has_longitude,
@@ -95,7 +99,7 @@ void check_control_setpoint()
     setpoint.set_time(2000000);
     setpoint.set_depth(5.0);
     auto* custom = setpoint.add_custom();
-    custom->set_domain("thruster");
+    custom->set_name("thruster");
     custom->set_value(50);
     custom->set_units("percent");
     check_round_trip<openocean::ControlSetpoint, openocean::control_setpoint_t>(setpoint,

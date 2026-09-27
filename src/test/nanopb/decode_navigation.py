@@ -14,4 +14,5 @@ assert not nav.geodetic.HasField("longitude") and not nav.HasField("enu")
 assert len(nav.speed) == 1 and nav.speed[0].value == 1.5
 assert nav.speed[0].mode == common_pb2.SPEED_MODE_OVER_GROUND
 assert nav.vehicle.name == "auv1"
+assert [(c.name, c.value, c.units) for c in nav.custom] == [("water_temperature", 12.5, "degC")]
 print("nanopb output decoded by Protobuf Python OK")
