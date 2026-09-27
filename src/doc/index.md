@@ -20,6 +20,39 @@ The output formats currently supported by this project are:
 
 This project is an initiative of Open Ocean Software: https://oceansoft.org.
 
+## How the outputs are generated
+
+*This section was written by Claude.*
+
+```mermaid
+flowchart TB
+    protos["openocean/messages/*.proto"] --> protoc
+
+    subgraph protobuf ["Protobuf"]
+        direction TB
+        python["Python<br>openocean.messages"]
+        cpp["C++<br>openocean_messages"]
+        nanopb["C (nanopb)<br>openocean_messages_nanopb"]
+        rust["Rust (prost)<br>openocean-messages crate"]
+    end
+
+    subgraph native ["Native types"]
+        direction TB
+        ros["ROS 2<br>openocean_msgs"]
+        lcm["LCM<br>.lcm types and lcm-gen C++"]
+    end
+
+    protoc -->|"--python_out"| python
+    protoc -->|"--cpp_out"| cpp
+    protoc -->|protoc-gen-nanopb| nanopb
+    protoc -->|"prost-build (build.rs)"| rust
+    protoc -->|protoc-gen-ros| ros
+    protoc -->|protoc-gen-lcm| lcm
+
+    cpp <-.->|"openocean_msgs_convert<br>to_ros() / from_ros()"| ros
+    cpp <-.->|"lcm_convert.h<br>to_lcm() / from_lcm()"| lcm
+```
+
 ## Documentation
 
 *This section was written by Claude.*
