@@ -1,0 +1,9 @@
+// Generated from openocean.test.Mapping.TableEntry (mapping.proto)
+
+package openocean.test;
+
+struct mapping_table_entry_t
+{
+    string key;
+    double value;
+}

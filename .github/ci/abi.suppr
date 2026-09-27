@@ -1,0 +1,9 @@
+# Protobuf's own inline templates (e.g. memswap<N>), instantiated in our libraries and so appearing
+# and disappearing as the generated code changes; changes to our types still show in our functions
+[suppress_function]
+  name_regexp = ^google::protobuf::
+
+# Protobuf's per-file descriptor offsets, which grow with each new message but are only read by
+# the generated .pb.cc inside the library, never by code compiled against the headers
+[suppress_variable]
+  name_regexp = ^TableStruct_.*::offsets$

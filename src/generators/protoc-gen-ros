@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+"""protoc plugin that generates a ROS 2 interface package.
+
+protoc --plugin=protoc-gen-ros=protoc-gen-ros \
+    --ros_out=package=NAME,maintainer=NAME,maintainer_email=EMAIL,license=LICENSE[,version=X.Y.Z][,description=TEXT]:OUT_DIR \
+    -I IMPORT_DIR file.proto...
+"""
+
+from openocean_gen import model, ros
+
+if __name__ == "__main__":
+    model.run_plugin(ros.generate)

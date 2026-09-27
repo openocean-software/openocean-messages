@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Installs the Ubuntu dependencies for the selected outputs, and writes init.cmake so
+# that new build directories enable the same outputs by default.
+#
+# Usage: init.sh [--cxx] [--python] [--ros] [--nanopb] [--rust] [--lcm]   (default: --cxx)
+#   --cxx     C++ Protobuf library (and its UDUNITS-2 units test)
+#   --python  Python Protobuf modules
+#   --ros     ROS 2 message package, built with colcon. Needs the ROS 2 apt repository:
+#             https://docs.ros.org/en/rolling/Installation/Ubuntu-Install-Debs.html
+#             ROS_DISTRO defaults to the distribution versions.env gives this Ubuntu release
+#   --nanopb  nanopb C library
+#   --rust    Rust crate (prost), built with cargo
+#   --lcm     LCM types (and with --cxx, C++ converters to and from Protobuf)
+set -euo pipefail
+
+cd "$(dirname "$0")"
+# shellcheck source=versions.env
+. ./versions.env
+
+cxx=OFF
+python=OFF
+ros=OFF
+nanopb=OFF
+rust=OFF
+lcm=OFF
+[ $# -eq 0 ] && cxx=ON
+for arg in "$@"; do
+    case "${arg}" in
+        --cxx) cxx=ON ;;
+        --python) python=ON ;;
+        --ros) ros=ON ;;
+        --nanopb) nanopb=ON ;;
+        --rust) rust=ON ;;
+        --lcm) lcm=ON ;;
+        -h | --help)
+            sed -n '5,14s/^# \{0,1\}//p' "$0"
+            exit 0
+            ;;
+        *)
+            sed -n '5,14s/^# \{0,1\}//p' "$0" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# libprotobuf-dev also has the well-known .proto files, e.g. descriptor.proto
+packages=(cmake ninja-build protobuf-compiler libprotobuf-dev)
+if [ "${cxx}" = ON ]; then
+    packages+=(g++ pkg-config libudunits2-dev)
+fi
+if [ "${python}" = ON ] || [ "${ros}" = ON ] || [ "${lcm}" = ON ]; then
+    packages+=(python3 python3-protobuf)
+fi
+if [ "${ros}" = ON ]; then
+    if [ -z "${ROS_DISTRO:-}" ]; then
+        codename=$(. /etc/os-release && echo "${VERSION_CODENAME}")
+        distro_var="ROS_DISTRO_${codename^^}"
+        ROS_DISTRO=${!distro_var:-}
+        if [ -z "${ROS_DISTRO}" ]; then
+            echo "Set ROS_DISTRO, or add ${distro_var} to versions.env" >&2
+            exit 1
+        fi
+    fi
+    packages+=(
+        g++
+        make
+        "ros-${ROS_DISTRO}-ament-cmake"
+        "ros-${ROS_DISTRO}-rosidl-default-generators"
+        "ros-${ROS_DISTRO}-rosidl-default-runtime"
+        "ros-${ROS_DISTRO}-builtin-interfaces"
+        python3-colcon-common-extensions
+    )
+fi
+if [ "${nanopb}" = ON ]; then
+    # gcc only recommends libc6-dev, which linking needs
+    packages+=(gcc libc6-dev nanopb libnanopb-dev)
+fi
+if [ "${rust}" = ON ]; then
+    # cargo fetches crates over HTTPS
+    packages+=(cargo ca-certificates)
+fi
+if [ "${lcm}" = ON ]; then
+    packages+=(g++ liblcm-dev)
+fi
+
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+    SUDO=sudo
+fi
+$SUDO apt-get update
+$SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${packages[@]}"
+
+cat > init.cmake <<EOF
+# Written by init.sh
+set(OPENOCEAN_CPP_DEFAULT ${cxx})
+set(OPENOCEAN_PYTHON_DEFAULT ${python})
+set(OPENOCEAN_ROS_DEFAULT ${ros})
+set(OPENOCEAN_NANOPB_DEFAULT ${nanopb})
+set(OPENOCEAN_RUST_DEFAULT ${rust})
+set(OPENOCEAN_LCM_DEFAULT ${lcm})
+EOF
+echo "Wrote init.cmake: OPENOCEAN_CPP=${cxx} OPENOCEAN_PYTHON=${python} OPENOCEAN_ROS=${ros} OPENOCEAN_NANOPB=${nanopb} OPENOCEAN_RUST=${rust} OPENOCEAN_LCM=${lcm}"

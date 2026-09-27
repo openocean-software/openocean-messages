@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  all:
+    name: All outputs (Ubuntu ${{ matrix.ubuntu }})
+    runs-on: ubuntu-latest
+    container: ubuntu:${{ matrix.ubuntu }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ["24.04", "26.04"]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Add the ROS 2 apt repository
+        run: .github/ci/add-ros-apt-source.sh
+      - name: Install dependencies
+        run: ./init.sh --cxx --python --ros --nanopb --rust --lcm
+      - name: Build
+        run: |
+          source /opt/ros/*/setup.bash
+          ./build.sh
+      - name: Test
+        run: |
+          source /opt/ros/*/setup.bash
+          ctest --test-dir build --output-on-failure --no-tests=error
+      # The tests depend on every output, which can hide an output that doesn't build on its own
+      - name: Build and install without the tests
+        run: |
+          BUILD_DIR=build-no-tests ./build.sh -DBUILD_TESTING=OFF
+          DESTDIR="${PWD}/install-no-tests" cmake --install build-no-tests
+
+  alone:
+    name: ${{ matrix.output }} alone (Ubuntu 26.04)
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        output: [cxx, python, ros, nanopb, rust, lcm]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Add the ROS 2 apt repository
+        if: matrix.output == 'ros'
+        run: .github/ci/add-ros-apt-source.sh
+      - name: Install dependencies
+        run: ./init.sh --${{ matrix.output }}
+      - name: Build
+        run: |
+          if [ -d /opt/ros ]; then source /opt/ros/*/setup.bash; fi
+          # init.cmake selects the output; only C++ (and LCM, which implies it) may need a C++ compiler
+          args=()
+          case "${{ matrix.output }}" in cxx | lcm) ;; *) args+=(-DCMAKE_CXX_COMPILER=/nonexistent/g++) ;; esac
+          ./build.sh "${args[@]}"
+      - name: Test
+        run: |
+          if [ -d /opt/ros ]; then source /opt/ros/*/setup.bash; fi
+          ctest --test-dir build --output-on-failure --no-tests=error
+
+  abi:
+    name: ABI compatibility (abidiff)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates git
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install dependencies
+        run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          ./init.sh --cxx --nanopb
+          apt-get install -y --no-install-recommends abigail-tools
+      - name: Compare the shared libraries with the base branch
+        run: .github/ci/check-abi.sh "origin/${{ github.base_ref }}"
+
+  buf:
+    name: Protobuf compatibility (buf breaking)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install buf
+        run: |
+          . ./versions.env
+          curl -fsSL -o "${RUNNER_TEMP}/buf" \
+            "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64"
+          echo "${BUF_SHA256}  ${RUNNER_TEMP}/buf" | sha256sum -c
+          chmod +x "${RUNNER_TEMP}/buf"
+      - name: Compare the protos with the base branch
+        run: BUF="${RUNNER_TEMP}/buf" .github/ci/check-buf.sh "origin/${{ github.base_ref }}"
+
+  docs:
+    name: Documentation (mkdocs)
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install mkdocs
+        run: apt-get update && apt-get install -y --no-install-recommends mkdocs mkdocs-material
+      - name: Build
+        run: mkdocs build --strict

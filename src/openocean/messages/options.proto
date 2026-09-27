@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package openocean;
+
+import "google/protobuf/descriptor.proto";
+
+message FieldOptions
+{
+    // UDUNITS-2 unit string, e.g. "m", "rad/s",
+    // "microseconds since 1970-01-01 00:00:00 UTC"
+    string units = 1;
+
+    // For values whose units are only known at runtime: the name of a sibling
+    // string field that holds the UDUNITS-2 unit string
+    string units_field = 2;
+}
+
+// 50000-99999 is reserved for in-house options
+extend google.protobuf.FieldOptions
+{
+    FieldOptions field = 57500;
+}

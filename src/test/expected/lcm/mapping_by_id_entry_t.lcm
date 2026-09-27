@@ -1,0 +1,10 @@
+// Generated from openocean.test.Mapping.ByIdEntry (mapping.proto)
+
+package openocean.test;
+
+struct mapping_by_id_entry_t
+{
+    int32_t key;
+    boolean has_value;
+    mapping_inner_t value;
+}

@@ -1,0 +1,3 @@
+# Resolve dependencies that build with rust-version (Ubuntu's cargo is 1.75)
+[resolver]
+incompatible-rust-versions = "fallback"

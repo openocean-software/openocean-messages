@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package openocean;
+
+import "openocean/messages/common.proto";
+import "openocean/messages/options.proto";
+
+// Quantities and frames match Navigation.
+message ControlSetpoint
+{
+    int64 time = 1 [(openocean.field).units =
+                        "microseconds since 1970-01-01 00:00:00 UTC"];
+
+    optional Euler attitude = 10;
+    optional Speed speed = 11;
+    optional double depth = 12 [(openocean.field).units = "m"];
+    // above the seafloor
+    optional double altitude = 13 [(openocean.field).units = "m"];
+
+    // defined in common.proto
+    repeated CustomValue custom = 100;
+
+    // For downstream messages that repeat these fields and add their own, so
+    // that they stay readable as a ControlSetpoint
+    reserved 1000 to max;
+}
