@@ -71,7 +71,7 @@ Composition works with every output: the ROS 2 and LCM generators refer to openo
 
 For a few loosely typed values (e.g. one more sensor reading), `Navigation.custom` and `ControlSetpoint.custom` hold a list of `CustomValue` (name, value, and UDUNITS-2 units) instead.
 
-Field numbers 1000 and up are reserved in `Navigation`, for messages that repeat its fields and add their own, so Protobuf readers of `Navigation` can still read them.
+Field numbers 1000 and up are reserved in `Navigation` and `ControlSetpoint`, for messages that repeat their fields and add their own, so Protobuf readers of the openocean message can still read them.
 
 Fields several projects need belong in openocean itself.
 
