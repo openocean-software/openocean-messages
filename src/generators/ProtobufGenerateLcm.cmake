@@ -61,7 +61,8 @@ function(protobuf_generate_lcm)
     DEPENDS ${protos} ${PROTOC_GEN_LCM} ${PROTOC_GEN_LCM_SOURCES} ${PROTOC_GEN_LCM_GENERATE}
     COMMENT "Generating LCM types in ${arg_OUTPUT_DIR}"
     VERBATIM)
-  add_custom_target(${arg_TARGET}_generate DEPENDS ${stamp})
+  # ALL, since nothing builds an interface library's dependencies unless something links it
+  add_custom_target(${arg_TARGET}_generate ALL DEPENDS ${stamp})
 
   add_library(${arg_TARGET} INTERFACE)
   add_dependencies(${arg_TARGET} ${arg_TARGET}_generate)

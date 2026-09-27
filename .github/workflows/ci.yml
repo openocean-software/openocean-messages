@@ -38,6 +38,11 @@ jobs:
         run: |
           source /opt/ros/*/setup.bash
           ctest --test-dir build --output-on-failure --no-tests=error
+      # The tests depend on every output, which can hide an output that doesn't build on its own
+      - name: Build and install without the tests
+        run: |
+          BUILD_DIR=build-no-tests ./build.sh -DBUILD_TESTING=OFF
+          DESTDIR="${PWD}/install-no-tests" cmake --install build-no-tests
 
   alone:
     name: ${{ matrix.output }} alone (Ubuntu 26.04)
