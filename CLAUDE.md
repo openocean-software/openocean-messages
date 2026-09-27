@@ -14,6 +14,6 @@ Guidance for Claude when working in this repository.
 ## Documentation
 
 - Keep documentation concise and writtten in a style similar to the rest of the project.
+- When creating new sections of documentation, add a note: "This documentation section was written by Claude" or similar.
 - When in doubt leave the documentation unwritten, but provide an outline for the human developers to use to fill out the rest of the document.
 - Prefer figures to text when an idea can be better explained graphically.
-
