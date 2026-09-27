@@ -155,6 +155,17 @@ foreach(tree build install)
 endforeach()
 set_tests_properties(downstream_install_tree PROPERTIES FIXTURES_REQUIRED install)
 
+# Asking only for python must not need a compiler, which the other components' dependencies do
+if(OPENOCEAN_PYTHON)
+  add_test(NAME downstream_python_only
+    COMMAND ${CMAKE_CTEST_COMMAND}
+            --build-and-test ${CMAKE_CURRENT_SOURCE_DIR}/downstream
+                             ${CMAKE_CURRENT_BINARY_DIR}/downstream_python_only
+            --build-generator ${CMAKE_GENERATOR}
+            --build-options -Dopenocean_messages_DIR=${PROJECT_BINARY_DIR} -DWITH_PYTHON=ON
+            --test-command ${CMAKE_CTEST_COMMAND} --output-on-failure)
+endif()
+
 if(update_expected)
   add_custom_target(update_expected ${update_expected}
     COMMENT "Updating ${CMAKE_CURRENT_SOURCE_DIR}/expected"
