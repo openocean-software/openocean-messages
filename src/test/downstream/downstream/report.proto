@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package downstream;
+
+import "openocean/messages/navigation.proto";
+
+message Report
+{
+    openocean.Navigation navigation = 1;
+    string note = 2;
+}

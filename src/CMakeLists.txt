@@ -4,6 +4,20 @@ set(OPENOCEAN_PROTOS
   openocean/messages/navigation.proto
   openocean/messages/control.proto)
 
+# In the include directory, so the import paths match the C++ #include paths
+install(FILES ${OPENOCEAN_PROTOS} openocean/messages/nanopb.options
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/openocean/messages)
+install(PROGRAMS generators/protoc-gen-ros generators/protoc-gen-lcm
+  DESTINATION ${OPENOCEAN_INSTALL_GENERATORS_DIR})
+install(FILES
+  generators/ProtocTarget.cmake
+  generators/ProtobufGenerateRos.cmake
+  generators/ProtobufGenerateLcm.cmake
+  generators/GenerateLcm.cmake
+  DESTINATION ${OPENOCEAN_INSTALL_GENERATORS_DIR})
+install(DIRECTORY generators/openocean_gen DESTINATION ${OPENOCEAN_INSTALL_GENERATORS_DIR}
+  PATTERN __pycache__ EXCLUDE)
+
 if(OPENOCEAN_CPP)
   add_library(openocean_messages)
   set_target_properties(openocean_messages PROPERTIES
@@ -14,8 +28,21 @@ if(OPENOCEAN_CPP)
     PROTOS ${OPENOCEAN_PROTOS}
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
     PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
-  target_include_directories(openocean_messages PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+  target_include_directories(openocean_messages PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
   target_link_libraries(openocean_messages PUBLIC protobuf::libprotobuf)
+
+  set(headers)
+  foreach(proto IN LISTS OPENOCEAN_PROTOS)
+    string(REGEX REPLACE "\\.proto$" ".pb.h" header ${proto})
+    list(APPEND headers ${CMAKE_CURRENT_BINARY_DIR}/${header})
+  endforeach()
+  install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/openocean/messages)
+  install(TARGETS openocean_messages EXPORT openocean_messages-cpp-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 if(OPENOCEAN_PYTHON)
@@ -35,6 +62,8 @@ if(OPENOCEAN_PYTHON)
     COMMENT "Generating Python Protobuf modules"
     VERBATIM)
   add_custom_target(openocean_messages_python ALL DEPENDS ${python_sources})
+  install(DIRECTORY ${OPENOCEAN_PYTHON_DIR}/openocean DESTINATION ${OPENOCEAN_INSTALL_PYTHON_DIR}
+    PATTERN __pycache__ EXCLUDE)
 endif()
 
 if(OPENOCEAN_NANOPB)
@@ -57,9 +86,20 @@ if(OPENOCEAN_NANOPB)
     VERBATIM)
   add_library(openocean_messages_nanopb ${nanopb_sources})
   set_target_properties(openocean_messages_nanopb PROPERTIES
-    VERSION ${PROJECT_VERSION} SOVERSION ${OPENOCEAN_SOVERSION})
-  target_include_directories(openocean_messages_nanopb PUBLIC $<BUILD_INTERFACE:${nanopb_dir}>)
+    VERSION ${PROJECT_VERSION} SOVERSION ${OPENOCEAN_SOVERSION} EXPORT_NAME nanopb)
+  # Its own directory, since the C++ headers have the same names
+  set(nanopb_include_dir ${CMAKE_INSTALL_INCLUDEDIR}/openocean_messages_nanopb)
+  target_include_directories(openocean_messages_nanopb PUBLIC
+    $<BUILD_INTERFACE:${nanopb_dir}>
+    $<INSTALL_INTERFACE:${nanopb_include_dir}>)
   target_link_libraries(openocean_messages_nanopb PUBLIC nanopb::protobuf-nanopb-static)
+
+  install(DIRECTORY ${nanopb_dir}/openocean DESTINATION ${nanopb_include_dir}
+    FILES_MATCHING PATTERN "*.h")
+  install(TARGETS openocean_messages_nanopb EXPORT openocean_messages-nanopb-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 if(OPENOCEAN_LCM)
@@ -71,12 +111,29 @@ if(OPENOCEAN_LCM)
       HEADER openocean/lcm_convert.h
       LINK_LIBRARIES openocean_messages)
   endif()
+  set(lcm_dir ${PROJECT_BINARY_DIR}/lcm)
   protobuf_generate_lcm(
     TARGET openocean_messages_lcm
-    OUTPUT_DIR ${PROJECT_BINARY_DIR}/lcm
+    OUTPUT_DIR ${lcm_dir}
     PROTOS ${OPENOCEAN_PROTOS}
     IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
     ${converter})
+  set_target_properties(openocean_messages_lcm PROPERTIES EXPORT_NAME lcm)
+  target_include_directories(openocean_messages_lcm INTERFACE
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+  install(DIRECTORY ${lcm_dir}/lcm-gen/openocean DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  # For lcm-gen's other languages
+  install(DIRECTORY ${lcm_dir}/protoc-gen-lcm/ DESTINATION ${CMAKE_INSTALL_DATADIR}/openocean_messages/lcm
+    FILES_MATCHING PATTERN "*.lcm" PATTERN openocean EXCLUDE)
+  set(lcm_targets openocean_messages_lcm)
+  if(OPENOCEAN_CPP)
+    set_target_properties(openocean_messages_lcm_convert PROPERTIES EXPORT_NAME lcm_convert)
+    install(FILES ${lcm_dir}/protoc-gen-lcm/openocean/lcm_convert.h
+      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/openocean)
+    list(APPEND lcm_targets openocean_messages_lcm_convert)
+  endif()
+  install(TARGETS ${lcm_targets} EXPORT openocean_messages-lcm-targets)
 endif()
 
 if(OPENOCEAN_RUST)

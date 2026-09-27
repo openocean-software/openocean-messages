@@ -1,3 +1,4 @@
+include(${CMAKE_CURRENT_LIST_DIR}/ProtocTarget.cmake)
 set(PROTOC_GEN_ROS ${CMAKE_CURRENT_LIST_DIR}/protoc-gen-ros)
 file(GLOB PROTOC_GEN_ROS_SOURCES ${CMAKE_CURRENT_LIST_DIR}/openocean_gen/*.py)
 

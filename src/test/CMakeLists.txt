@@ -129,6 +129,32 @@ if(OPENOCEAN_LCM)
   endif()
 endif()
 
+# A downstream project, against this build directory and against an installation of it
+set(downstream_options -DOPENOCEAN_VERSION=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+foreach(output CPP NANOPB LCM PYTHON ROS)
+  list(APPEND downstream_options -DWITH_${output}=${OPENOCEAN_${output}})
+endforeach()
+set(install_dir ${CMAKE_CURRENT_BINARY_DIR}/install)
+add_test(NAME install
+  COMMAND ${CMAKE_COMMAND} -E env DESTDIR=
+          ${CMAKE_COMMAND} --install ${PROJECT_BINARY_DIR} --prefix ${install_dir})
+set_tests_properties(install PROPERTIES FIXTURES_SETUP install)
+foreach(tree build install)
+  if(tree STREQUAL build)
+    set(find_option -Dopenocean_messages_DIR=${PROJECT_BINARY_DIR})
+  else()
+    set(find_option -DCMAKE_PREFIX_PATH=${install_dir})
+  endif()
+  add_test(NAME downstream_${tree}_tree
+    COMMAND ${CMAKE_CTEST_COMMAND}
+            --build-and-test ${CMAKE_CURRENT_SOURCE_DIR}/downstream
+                             ${CMAKE_CURRENT_BINARY_DIR}/downstream_${tree}
+            --build-generator ${CMAKE_GENERATOR}
+            --build-options ${find_option} ${downstream_options}
+            --test-command ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=ignore)
+endforeach()
+set_tests_properties(downstream_install_tree PROPERTIES FIXTURES_REQUIRED install)
+
 if(update_expected)
   add_custom_target(update_expected ${update_expected}
     COMMENT "Updating ${CMAKE_CURRENT_SOURCE_DIR}/expected"
