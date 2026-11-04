@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(openocean_test_msgs VERSION 0.1.0)
+project(openocean_test_msgs VERSION 0.0.1)
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)

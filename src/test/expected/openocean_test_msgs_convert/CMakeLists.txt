@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(openocean_test_msgs_convert VERSION 0.1.0 LANGUAGES CXX)
+project(openocean_test_msgs_convert VERSION 0.0.1 LANGUAGES CXX)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
