@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13...4.2.3 FATAL_ERROR)
-project(openocean_messages VERSION 0.1.0 LANGUAGES NONE)
+project(openocean_messages VERSION 0.0.1 LANGUAGES NONE)
 
 # The shared libraries' ABI version, independent of PROJECT_VERSION. Bump it for any ABI change,
 # which for Protobuf and nanopb generated code includes adding a field.
